@@ -7,8 +7,9 @@ using TextureLoader.Core;
 
 namespace TextureLoader.computerInterface.Views
 {
-    internal class TexturesView : ComputerView
+    internal class SettingsView_Selection : ComputerView
     {
+
         private UIElementPageHandler<TextItem_Entry> pageHandler;
         private UISelectionHandler selectionHandler;
 
@@ -28,7 +29,6 @@ namespace TextureLoader.computerInterface.Views
 
             Dictionary<string, string> AlltexturePaths = Core.TextureLoader.GetAllTextureNames();
             TextItem_Entry[] Entries = new TextItem_Entry[AlltexturePaths.Count];
-            selectionHandler.MaxIdx = AlltexturePaths.Count;
             for (int i = 0; i < AlltexturePaths.Count; i++)
             {
                 KeyValuePair<string, string> pair = AlltexturePaths.ElementAt(i);
@@ -41,11 +41,14 @@ namespace TextureLoader.computerInterface.Views
 
         private void DrawPage()
         {
+            string path = Core.SettingsController.SelectedKey;
+
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.AddHeader(SCREEN_WIDTH, "Textures", $"[{Core.TextureLoader.GetAllTextureNames().Count}] Entries");
+            stringBuilder.AddHeader(SCREEN_WIDTH, "Texture Selection on Startup", $"[{Core.TextureLoader.GetAllTextureNames().Count}] Entries");
             pageHandler.EnumarateElements((obj, index) =>
             {
-                stringBuilder.AppendLine(selectionHandler.GetIndicatedText(index, obj.Name));
+                bool IsSelected = path == obj.FullPath;
+                stringBuilder.AppendLine(selectionHandler.GetIndicatedText(index, IsSelected ? $"[{obj.Name}]".ToColor("green") : obj.Name));
             });
             stringBuilder.AppendFooter(pageHandler);
             SetText(stringBuilder);
@@ -53,7 +56,8 @@ namespace TextureLoader.computerInterface.Views
 
         private void SelectionHandler_OnSelected(int obj)
         {
-            ShowView<TextureInfoView>(pageHandler.GetAbsoluteIndex(obj));
+            SettingsController.SelectedKey = pageHandler.GetElementsForPage(pageHandler.CurrentPage)[obj].FullPath;
+            ShowView<SettingsView>();
         }
 
         public override void OnKeyPressed(EKeyboardKey key)
@@ -65,17 +69,6 @@ namespace TextureLoader.computerInterface.Views
             }
             if (key == EKeyboardKey.Back)
                 ShowView<MainView>();
-        }
-    }
-
-    internal class TextItem_Entry
-    {
-        public string Name { get; set; }
-        public string FullPath { get; set; }
-        public TextItem_Entry(string name, string fullPath)
-        {
-            Name = name;
-            FullPath = fullPath;
         }
     }
 }
