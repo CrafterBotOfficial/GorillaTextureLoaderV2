@@ -1,0 +1,100 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <LangVersion>latest</LangVersion>
+
+        <ManagedPath>$(GORILLATAG_PATH)/Gorilla Tag_Data/Managed/</ManagedPath>
+        <BepInExPath>$(GORILLATAG_PATH)/BepInEx/core/</BepInExPath>
+    </PropertyGroup>
+
+    <!-- Output -->
+    <Target AfterTargets="Build" Name="Output">
+        <Copy SourceFiles="$(TargetPath);bin/Debug/$(TargetFramework)/$(ProjectName).pdb" DestinationFiles="$(GORILLATAG_PATH)/BepInEx/plugins/$(ProjectName)/$(ProjectName).dll;$(GORILLATAG_PATH)/BepInEx/plugins/$(ProjectName)/$(ProjectName).pdb" />
+    </Target>
+
+    <!-- Dependencies -->
+
+    <ItemGroup Condition="'$(CI)'=='TRUE'">
+        <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" />
+        <PackageReference Publicize="true" Include="gorillatag" Version="1.0.*" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(CI)'!='TRUE'">
+        <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" />
+
+        <Reference Include="0Harmony">
+            <HintPath>$(GORILLATAG_PATH)\BepInEx\core\0Harmony.dll</HintPath>
+        </Reference>
+        <Reference Include="Assembly-CSharp" Publicize="true">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\Assembly-CSharp.dll</HintPath>
+        </Reference>
+        <Reference Include="BepInEx">
+            <HintPath>$(GORILLATAG_PATH)\BepInEx\core\BepInEx.dll</HintPath>
+        </Reference>
+        <Reference Include="Mono.Cecil">
+            <HintPath>$(GORILLATAG_PATH)\BepInEx\core\Mono.Cecil.dll</HintPath>
+        </Reference>
+        <Reference Include="MonoMod.Utils">
+            <HintPath>$(GORILLATAG_PATH)\BepInEx\core\MonoMod.Utils.dll</HintPath>
+        </Reference>
+        <Reference Include="JsonConvert">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\Newtonsoft.Json.dll</HintPath>
+        </Reference>
+        <Reference Include="SteamVR">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\SteamVR.dll</HintPath>
+        </Reference>
+        <Reference Include="SteamVR_Actions">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\SteamVR_Actions.dll</HintPath>
+        </Reference>
+        <Reference Include="Unity.TextMeshPro">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AnimationModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.IMGUIModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+        </Reference>
+        <Reference Include="Utilla">
+            <HintPath>$(GORILLATAG_PATH)/BepInEx\plugins\Utilla\Utilla.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AssetBundleModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.ImageConversionModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.PhysicsModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextCoreFontEngineModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextCoreTextEngineModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.UI.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.XR">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.XRModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.UIModule">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <!-- Exclude FastCloner from compilation -->
+    <ItemGroup>
+        <Compile Remove="FastCloner/**" />
+    </ItemGroup>
+</Project>
