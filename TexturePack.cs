@@ -10,7 +10,5 @@ public class TexturePack(string path, string name, string description, bool hasA
     public string Name = name;
     public string Description = description;
     public bool HasAdvantage = hasAdvantage;
-    public Dictionary<EMap, TextureWrapper[]> Textures;
+    public Dictionary<EMap, Dictionary<string, Texture2D>> Textures;
 }
-
-public record class TextureWrapper(string Name, Texture2D Texture);
