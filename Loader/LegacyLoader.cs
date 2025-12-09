@@ -61,7 +61,7 @@ public class LegacyLoader : ILoader
 
         pack.Textures = new()
         {
-            { EMap.Forest, textures.Select(x => new TextureWrapper(x.Key, x.Value)).ToArray() }
+            { EMap.Forest, textures.Select(x => new KeyValuePair<string, Texture2D>(x.Key, x.Value)).ToDictionary(t => t.Key, t => t.Value) }
         };
         Main.Log(pack.Textures is not null);
     }
