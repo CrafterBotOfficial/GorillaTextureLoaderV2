@@ -10,6 +10,7 @@
     <!-- Output -->
     <Target AfterTargets="Build" Name="Output">
         <Copy SourceFiles="$(TargetPath);bin/Debug/$(TargetFramework)/$(ProjectName).pdb" DestinationFiles="$(GORILLATAG_PATH)/BepInEx/plugins/$(ProjectName)/$(ProjectName).dll;$(GORILLATAG_PATH)/BepInEx/plugins/$(ProjectName)/$(ProjectName).pdb" />
+        <MakeDir Directories="$(GORILLATAG_PATH)/BepInEx/plugins/$(ProjectName)/packs"/>
     </Target>
 
     <!-- Dependencies -->
@@ -91,10 +92,5 @@
         <Reference Include="UnityEngine.UIModule">
             <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.UIModule.dll</HintPath>
         </Reference>
-    </ItemGroup>
-
-    <!-- Exclude FastCloner from compilation -->
-    <ItemGroup>
-        <Compile Remove="FastCloner/**" />
     </ItemGroup>
 </Project>

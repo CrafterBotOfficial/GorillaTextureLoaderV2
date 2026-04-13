@@ -1,10 +1,11 @@
-using GorillaTextureLoader.Map;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace GorillaTextureLoader.Loader;
 
 public interface ILoader
 {
-    public TexturePack[] GetTexturePacks(string dir);
-
-    public void LoadTextures(EMap map, TexturePack pack);
+    public Task<TexturePackMeta[]> LoadAllMetadatas();
+    public (TexturePackMeta, Dictionary<string, Texture2DArray>) LoadPack(TexturePackMeta meta);
 }

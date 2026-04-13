@@ -1,22 +1,29 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using GorillaTextureLoader.Loader;
-using GorillaTextureLoader.Map;
 
 namespace GorillaTextureLoader;
 
 public class TextureController
 {
-    private static Lazy<TextureController> instance => new Lazy<TextureController>(() => new TextureController());
+    private static Lazy<TextureController> instance = new Lazy<TextureController>(() => new TextureController());
     public static TextureController Instance => instance.Value;
 
-    public void LoadTexture()
-    {
-        ILoader loader = new Loader.LegacyLoader();
-        var packs = loader.GetTexturePacks(Directory.GetParent(typeof(TextureController).Assembly.Location).ToString() + "/packs/");
-        loader.LoadTextures(EMap.Forest, packs[0]);
+    public const string TEXTURE_PACK_FILE_PREFIX = "*.pack";
 
-        var map = new Map.ForestTextureManager().Setup();
-        map.SetTextures(packs[0]);
+    public string TexturePackPath = Path.Combine("BepInEx", "plugins", "GorillaTextureLoader", "packs"); // Todo: Make reliable
+
+    private readonly ILoader loaderV2 = new LoaderV2();
+
+    private TexturePackMeta[] metadatas;
+
+    // Todo: Add legacy loader
+    public async Task<TexturePackMeta[]> LoadAllPackMetasAsync()
+    {
+        if (metadatas is not null) return metadatas;
+        var result = await loaderV2.LoadAllMetadatas();
+        metadatas = result;
+        return result;
     }
 }
