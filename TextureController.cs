@@ -14,9 +14,28 @@ public class TextureController
 
     public string TexturePackPath = Path.Combine("BepInEx", "plugins", "GorillaTextureLoader", "packs"); // Todo: Make reliable
 
-    private readonly ILoader loaderV2 = new LoaderV2();
+    public Task<TexturePackMeta[]> PackMetas;
+    public TexturePackMeta Current;
 
+    private readonly ILoader loaderV2 = new LoaderV2();
     private TexturePackMeta[] metadatas;
+
+    public void Initialize()
+    {
+        PackMetas = LoadAllPackMetasAsync();
+        PackMetas.ContinueWith(_ => MainPage.Update()); // ensure page updates when all packs are loaded
+    }
+
+    public void LoadPack(TexturePackMeta meta)
+    {
+        (_, var combined) = loaderV2.LoadPack(meta);
+
+        UnityEngine.GameObject.Find("UnityTempFile-569358720e8bdbe48a564ee0113f0542 (combined by EdMeshCombiner)").GetComponent<UnityEngine.MeshRenderer>().sharedMaterial.SetTexture("_BaseMap_Atlas", combined["forestatlas"]);
+        UnityEngine.GameObject.Find("UnityTempFile-201cbd57f079d244fa831efae4c2e050 (combined by EdMeshCombiner)").GetComponent<UnityEngine.MeshRenderer>().sharedMaterial.SetTexture("_BaseMap_Atlas", combined["pitground"]);
+        UnityEngine.GameObject.Find("UnityTempFile-ff72814c43f9a964289644d8b38df711 (combined by EdMeshCombiner)").GetComponent<UnityEngine.MeshRenderer>().sharedMaterial.SetTexture("_BaseMap_Atlas", combined["pitground"]);
+        // UnityTempFile-ff72814c43f9a964289644d8b38df711 (combined by EdMeshCombiner)
+        Current = meta;
+    }
 
     // Todo: Add legacy loader
     public async Task<TexturePackMeta[]> LoadAllPackMetasAsync()
