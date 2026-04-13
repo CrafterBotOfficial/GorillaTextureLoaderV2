@@ -15,6 +15,8 @@ namespace GorillaTextureLoader.Loader;
 /// </summary>
 public class LoaderV2 : ILoader
 {
+    private Dictionary<TexturePackMeta, Dictionary<string, Texture2DArray>> cache = new();
+
     public async Task<TexturePackMeta[]> LoadAllMetadatas()
     {
         Main.Log("Loading all v2 texture pack's metadata...");
@@ -52,6 +54,9 @@ public class LoaderV2 : ILoader
     // Todo: rework to not make nightmare
     public (TexturePackMeta, Dictionary<string, Texture2DArray>) LoadPack(TexturePackMeta meta)
     {
+        if (cache.TryGetValue(meta, out var cached))
+            return (meta, cached);
+
         Main.Log("Attempting to load pack to memory", BepInEx.Logging.LogLevel.Message);
         var result = new Dictionary<string, Dictionary<int, Texture2D>>();
         using var archive = ZipFile.OpenRead(meta.ZipFilePath);
@@ -88,6 +93,7 @@ public class LoaderV2 : ILoader
             combinedArrays[pair.Key] = CreateTexture2DArray(pair.Value);
         }
 
+        cache.Add(meta, combinedArrays);
         return (meta, combinedArrays);
     }
 
