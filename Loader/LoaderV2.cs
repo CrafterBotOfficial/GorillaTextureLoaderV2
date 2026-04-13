@@ -51,12 +51,8 @@ public class LoaderV2 : ILoader
         })];
     }
 
-    // Todo: rework to not make nightmare
-    public (TexturePackMeta, Dictionary<string, Texture2DArray>) LoadPack(TexturePackMeta meta)
+    public (TexturePackMeta, Dictionary<string, Dictionary<int, Texture2D>>) LoadPack(TexturePackMeta meta)
     {
-        if (cache.TryGetValue(meta, out var cached))
-            return (meta, cached);
-
         Main.Log("Attempting to load pack to memory", BepInEx.Logging.LogLevel.Message);
         var result = new Dictionary<string, Dictionary<int, Texture2D>>();
         using var archive = ZipFile.OpenRead(meta.ZipFilePath);
@@ -68,8 +64,11 @@ public class LoaderV2 : ILoader
             using var memoryStream = new MemoryStream();
             entryStream.CopyTo(memoryStream);
 
+            // var texture = LoadTextureDXT(memoryStream.ToArray(), TextureFormat.DXT5);
             var texture = new Texture2D(0, 0);
             texture.LoadImage(memoryStream.ToArray());
+            texture.Compress(true);
+            texture.filterMode = FilterMode.Point;
             int index = int.Parse(entry.Name.RemoveStart("slice_").RemoveEnd(".png"));
 
             if (result.TryGetValue(atlasName, out var dict)) dict.Add(index, texture);
@@ -78,23 +77,7 @@ public class LoaderV2 : ILoader
             // Main.Log("Finished");
         }
 
-        var textureArrays = new Dictionary<string, Texture2D[]>();
-        for (int i = 0; i < result.Count; i++)
-        {
-            var orderedArray = result.ElementAt(i).Value.OrderBy(x => x.Key).Select(x => x.Value);
-            textureArrays[result.ElementAt(i).Key] = [.. orderedArray];
-        }
-
-        // map to texture2darray
-        var combinedArrays = new Dictionary<string, Texture2DArray>(textureArrays.Count);
-        foreach (var pair in textureArrays)
-        {
-            Main.Log("Mapping to comine");
-            combinedArrays[pair.Key] = CreateTexture2DArray(pair.Value);
-        }
-
-        cache.Add(meta, combinedArrays);
-        return (meta, combinedArrays);
+        return (meta, result);
     }
 
     private string GetHash(FileStream stream)
@@ -112,35 +95,27 @@ public class LoaderV2 : ILoader
         return true;
     }
 
-    public static Texture2DArray CreateTexture2DArray(Texture2D[] textures)
+    // https://discussions.unity.com/t/can-you-load-dds-textures-during-runtime/84192/2
+    public static Texture2D LoadTextureDXT(byte[] ddsBytes, TextureFormat textureFormat)
     {
-        var slice0 = textures[0];
-        var textureArray = new Texture2DArray(
-            slice0.width,
-            slice0.height,
-            textures.Length,
-            slice0.format,
-            false,
-            false
-        );
+        if (textureFormat != TextureFormat.DXT1 && textureFormat != TextureFormat.DXT5)
+            throw new Exception("Invalid TextureFormat. Only DXT1 and DXT5 formats are supported by this method.");
 
-        for (int i = 0; i < textures.Length; i++)
-        {
-            if (textures[i].width != slice0.width || textures[i].height != slice0.height)
-            {
-                Main.Log("Invalid textrurepack", BepInEx.Logging.LogLevel.Warning);
-                continue;
-            }
+        byte ddsSizeCheck = ddsBytes[4];
+        if (ddsSizeCheck != 124)
+            throw new Exception("Invalid DDS DXTn texture. Unable to read");  //this header byte should be 124 for DDS image files
 
-            Graphics.CopyTexture(textures[i], 0, 0, textureArray, i, 0);
-        }
+        int height = ddsBytes[13] * 256 + ddsBytes[12];
+        int width = ddsBytes[17] * 256 + ddsBytes[16];
 
-        textureArray.filterMode = FilterMode.Point;
-        textureArray.anisoLevel = 0;
-        textureArray.mipMapBias = 0f;
-        textureArray.Apply(false, false);
+        int DDS_HEADER_SIZE = 128;
+        byte[] dxtBytes = new byte[ddsBytes.Length - DDS_HEADER_SIZE];
+        Buffer.BlockCopy(ddsBytes, DDS_HEADER_SIZE, dxtBytes, 0, ddsBytes.Length - DDS_HEADER_SIZE);
 
-        return textureArray;
+        Texture2D texture = new Texture2D(width, height, textureFormat, false);
+        texture.LoadRawTextureData(dxtBytes);
+        texture.Apply();
+
+        return (texture);
     }
 }
-
