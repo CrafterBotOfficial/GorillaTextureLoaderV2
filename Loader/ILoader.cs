@@ -7,5 +7,5 @@ namespace GorillaTextureLoader.Loader;
 public interface ILoader
 {
     public Task<TexturePackMeta[]> LoadAllMetadatas();
-    public (TexturePackMeta, Dictionary<string, Texture2DArray>) LoadPack(TexturePackMeta meta);
+    public (TexturePackMeta, Dictionary<string, Dictionary<int, Texture2D>>) LoadPack(TexturePackMeta meta);
 }
