@@ -6,7 +6,8 @@ public record class TexturePackMeta(
     string Name,
     string Author,
     string PackVersion,
-    string CompiledGameVersion
+    string CompiledGameVersion,
+    bool ForceNew // todo: rename
 )
 {
     [JsonIgnore] public bool IsVerified;

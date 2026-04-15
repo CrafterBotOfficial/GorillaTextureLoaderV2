@@ -15,7 +15,7 @@ namespace GorillaTextureLoader.Loader;
 /// </summary>
 public class LoaderV2 : ILoader
 {
-    private Dictionary<TexturePackMeta, Dictionary<string, Texture2DArray>> cache = new();
+    private Dictionary<TexturePackMeta, Dictionary<string, Texture2DArray>> cache = [];
 
     public async Task<TexturePackMeta[]> LoadAllMetadatas()
     {
@@ -51,7 +51,7 @@ public class LoaderV2 : ILoader
         })];
     }
 
-    public (TexturePackMeta, Dictionary<string, Dictionary<int, Texture2D>>) LoadPack(TexturePackMeta meta)
+    public Dictionary<string, Dictionary<int, Texture2D>> LoadPack(TexturePackMeta meta)
     {
         Main.Log("Attempting to load pack to memory", BepInEx.Logging.LogLevel.Message);
         var result = new Dictionary<string, Dictionary<int, Texture2D>>();
@@ -64,20 +64,23 @@ public class LoaderV2 : ILoader
             using var memoryStream = new MemoryStream();
             entryStream.CopyTo(memoryStream);
 
-            // var texture = LoadTextureDXT(memoryStream.ToArray(), TextureFormat.DXT5);
             var texture = new Texture2D(0, 0);
             texture.LoadImage(memoryStream.ToArray());
-            texture.Compress(true);
+            texture.Compress(false);
             texture.filterMode = FilterMode.Point;
-            int index = int.Parse(entry.Name.RemoveStart("slice_").RemoveEnd(".png"));
+            texture.Apply(false, true);
+            // texture.Apply()
+            // // todo: add automated resizing of badly made textures
 
+
+            int index = int.Parse(entry.Name.RemoveStart("slice_").RemoveEnd(".png"));
             if (result.TryGetValue(atlasName, out var dict)) dict.Add(index, texture);
             else result.Add(atlasName, new Dictionary<int, Texture2D> { { index, texture } });
 
             // Main.Log("Finished");
         }
 
-        return (meta, result);
+        return result;
     }
 
     private string GetHash(FileStream stream)
@@ -93,29 +96,5 @@ public class LoaderV2 : ILoader
     {
         Main.Log($"Checking {hash} against whitelist", BepInEx.Logging.LogLevel.Debug);
         return true;
-    }
-
-    // https://discussions.unity.com/t/can-you-load-dds-textures-during-runtime/84192/2
-    public static Texture2D LoadTextureDXT(byte[] ddsBytes, TextureFormat textureFormat)
-    {
-        if (textureFormat != TextureFormat.DXT1 && textureFormat != TextureFormat.DXT5)
-            throw new Exception("Invalid TextureFormat. Only DXT1 and DXT5 formats are supported by this method.");
-
-        byte ddsSizeCheck = ddsBytes[4];
-        if (ddsSizeCheck != 124)
-            throw new Exception("Invalid DDS DXTn texture. Unable to read");  //this header byte should be 124 for DDS image files
-
-        int height = ddsBytes[13] * 256 + ddsBytes[12];
-        int width = ddsBytes[17] * 256 + ddsBytes[16];
-
-        int DDS_HEADER_SIZE = 128;
-        byte[] dxtBytes = new byte[ddsBytes.Length - DDS_HEADER_SIZE];
-        Buffer.BlockCopy(ddsBytes, DDS_HEADER_SIZE, dxtBytes, 0, ddsBytes.Length - DDS_HEADER_SIZE);
-
-        Texture2D texture = new Texture2D(width, height, textureFormat, false);
-        texture.LoadRawTextureData(dxtBytes);
-        texture.Apply();
-
-        return (texture);
     }
 }
