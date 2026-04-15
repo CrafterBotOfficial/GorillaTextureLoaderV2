@@ -28,6 +28,14 @@ fi
 package_json=$(cat "$target_folder/package.json")
 name=$(echo "$package_json" | jq -r '.Name')
 cd "$target_folder"
+
+# todo: add support for press compress bc7 for v3 packs
+# for file in $(find ./* -type f -name "*.png")
+# do
+#     magick "$file" -define dds:compression=bc7 "$file.dds"
+# done
+
+
 zip -9 "../$name.pack" -r .
 cd ..
 echo "Hash: $(sha256sum "$name.pack" | awk '{print $1}')"

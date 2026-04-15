@@ -20,20 +20,16 @@ public class Main : BaseUnityPlugin
     }
 
 #if DEBUG
-
     private void OnGUI()
     {
         if (!TextureController.Instance.PackMetas.IsCompleted) return;
+
+        if (GUILayout.Button("Reset"))
+            TextureController.Instance.UnloadPack();
         foreach (var pack in TextureController.Instance.PackMetas.Result)
             if (GUILayout.Button(pack.Name))
             {
                 TextureController.Instance.LoadPack(pack);
-                // (_, var combined) = new Loader.LoaderV2().LoadPack(pack);
-                //
-                // GameObject.Find("UnityTempFile-569358720e8bdbe48a564ee0113f0542 (combined by EdMeshCombiner)").GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_BaseMap_Atlas", combined["forestatlas"]);
-                // GameObject.Find("UnityTempFile-201cbd57f079d244fa831efae4c2e050 (combined by EdMeshCombiner)").GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_BaseMap_Atlas", combined["pitground"]);
-                // GameObject.Find("UnityTempFile-ff72814c43f9a964289644d8b38df711 (combined by EdMeshCombiner)").GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_BaseMap_Atlas", combined["pitground"]);
-                // // UnityTempFile-ff72814c43f9a964289644d8b38df711 (combined by EdMeshCombiner)
             }
     }
 #endif
