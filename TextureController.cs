@@ -40,23 +40,23 @@ public class TextureController
 
     public void LoadPack(TexturePackMeta meta)
     {
+#if DEBUG
+        var watch = Stopwatch.StartNew();
+#endif
         var combined = loaderV2.LoadPack(meta);
 
         // todo: add to remote server + offline for names->key
         Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}");
-        var watch = Stopwatch.StartNew();
-        if (meta.ForceNew)
+        foreach (var pair in combined)
         {
-            ApplyFrom("TexArrayAtlas_2048x2048_BC7_AllScenes", CreateTextureArray([.. combined["forestatlas"].OrderBy(x => x.Key).Select(x => x.Value)]));
-            ApplyFrom("TexArrayAtlas_256x256_BC7_AllScenes", CreateTextureArray([.. combined["pitground"].OrderBy(x => x.Key).Select(x => x.Value)]));
+            if (meta.ForceNew) ApplyFrom(pair.Key, CreateTextureArray([.. pair.Value.OrderBy(x => x.Key).Select(x => x.Value)]));
+            else ApplyTo(pair.Key, pair.Value);
         }
-        else
-        {
-            ApplyTo("TexArrayAtlas_2048x2048_BC7_AllScenes", "forestatlas", combined);
-            ApplyTo("TexArrayAtlas_256x256_BC7_AllScenes", "pitground", combined);
-        }
+
+#if DEBUG
         watch.Stop();
         Main.Log($"Finished in {watch.Elapsed.Seconds} {watch.Elapsed.Milliseconds}ms");
+#endif
         Current = meta;
     }
 
@@ -74,47 +74,24 @@ public class TextureController
         }
     }
 
-    private Texture2DArray CreateTextureArray(Texture2D[] textures)
-    {
-        var slice0 = textures[0];
-        var textureArray = new Texture2DArray(
-            slice0.width,
-            slice0.height,
-            textures.Length,
-            slice0.format,
-            false,
-            false
-        );
-
-        for (int i = 0; i < textures.Length; i++)
-        {
-            if (textures[i].width != slice0.width || textures[i].height != slice0.height)
-            {
-                Main.Log("Invalid textrurepack", BepInEx.Logging.LogLevel.Error);
-                break;
-            }
-
-            Graphics.CopyTexture(textures[i], 0, 0, textureArray, i, 0);
-        }
-
-        textureArray.filterMode = FilterMode.Point;
-        textureArray.anisoLevel = 0;
-        textureArray.mipMapBias = 0f;
-        textureArray.Apply(false, false);
-        return textureArray;
-    }
-
     private void ApplyFrom(string textureName, Texture2DArray textures)
     {
         var materials = FindMaterialByTextureName(textureName);
+        if (materials.Length == 0)
+        {
+            Main.Log("Failed to find textures for " + textureName, BepInEx.Logging.LogLevel.Error);
+            return;
+        }
+
         CacheGameTextures(textureName, materials.First().GetTexture("_BaseMap_Atlas") as Texture2DArray);
         foreach (var material in materials)
         {
+            Main.Log($"Applying {textureName} to {material.name}");
             material.SetTexture("_BaseMap_Atlas", textures);
         }
     }
 
-    private void ApplyTo(string textureName, string key, Dictionary<string, Dictionary<int, Texture2D>> combined)
+    private void ApplyTo(string textureName, Dictionary<int, Texture2D> combined)
     {
         var materials = FindMaterialByTextureName(textureName);
         var atlas = materials.First().GetTexture("_BaseMap_Atlas") as Texture2DArray;
@@ -125,7 +102,7 @@ public class TextureController
             var newAtlas = new Texture2DArray(atlas.width, atlas.height, atlas.depth, TextureFormat.DXT5, false, false); // lin true, bc7 compresison TextureFormat.DXT5
             for (int i = 0; i < atlas.depth; i++)
             {
-                if (combined[key].TryGetValue(i, out var texture))
+                if (combined.TryGetValue(i, out var texture))
                 {
                     Main.Log("Copying modified " + i, BepInEx.Logging.LogLevel.Debug);
                     Graphics.CopyTexture(texture, 0, 0, newAtlas, i, 0);
@@ -161,8 +138,36 @@ public class TextureController
         }
         catch (Exception ex)
         {
-            Main.Log($"Failed to apply texture {textureName} {key} {ex.Message}", BepInEx.Logging.LogLevel.Error);
+            Main.Log($"Failed to apply texture {textureName} {ex.Message}", BepInEx.Logging.LogLevel.Error);
         }
+    }
+
+    private Texture2DArray CreateTextureArray(Texture2D[] textures)
+    {
+        var slice0 = textures[0];
+        Main.Log($"Creating array with {textures.Length} slices {slice0.width}x{slice0.height} pixels", BepInEx.Logging.LogLevel.Debug);
+        var textureArray = new Texture2DArray(
+            slice0.width,
+            slice0.height,
+            textures.Length,
+            slice0.format,
+            false,
+            false
+        );
+
+        for (int i = 0; i < textures.Length; i++)
+        {
+            if (textures[i].width != slice0.width || textures[i].height != slice0.height)
+            {
+                Main.Log("Invalid textrurepack", BepInEx.Logging.LogLevel.Error);
+                break;
+            }
+            Graphics.CopyTexture(textures[i], 0, 0, textureArray, i, 0);
+        }
+
+        textureArray.filterMode = FilterMode.Point;
+        textureArray.Apply(false, true);
+        return textureArray;
     }
 
     private void CacheGameTextures(string textureName, Texture2DArray atlas)
@@ -206,12 +211,5 @@ public class TextureController
         var result = await loaderV2.LoadAllMetadatas();
         metadatas = result;
         return result;
-    }
-
-    public TextureFormat GetAtlasFormat()
-    {
-        var format = (FindMaterialByTextureName("TexArrayAtlas_2048x2048_BC7_AllScenes").First().GetTexture("_BaseMap_Atlas") as Texture2DArray).format;
-        Main.Log($"{format.GetName()}");
-        return format;
     }
 }
