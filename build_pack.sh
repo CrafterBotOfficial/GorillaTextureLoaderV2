@@ -36,7 +36,9 @@ cd "$target_folder"
 # done
 
 
-zip -9 "../$name.pack" -r .
+output="../$name.pack"
+rm "$output"
+zip -9 "$output" -r .
 cd ..
 echo "Hash: $(sha256sum "$name.pack" | awk '{print $1}')"
 
