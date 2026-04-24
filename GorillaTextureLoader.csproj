@@ -7,6 +7,10 @@
         <BepInExPath>$(GORILLATAG_PATH)/BepInEx/core/</BepInExPath>
     </PropertyGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="Remaps.json" />
+    </ItemGroup>
+
     <!-- Output -->
     <Target AfterTargets="Build" Name="Output">
         <Copy SourceFiles="$(TargetPath);bin/Debug/$(TargetFramework)/$(ProjectName).pdb" DestinationFiles="$(GORILLATAG_PATH)/BepInEx/plugins/$(ProjectName)/$(ProjectName).dll;$(GORILLATAG_PATH)/BepInEx/plugins/$(ProjectName)/$(ProjectName).pdb" />

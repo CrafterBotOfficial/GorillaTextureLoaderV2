@@ -29,8 +29,8 @@ public class TextureController
     private readonly ILoader loaderV2 = new LoaderV2();
     private TexturePackMeta[] metadatas;
 
-    private Dictionary<string, Texture2DArray> cachedGameTextures = [];
-    private Dictionary<string, Material[]> cachedMaterials = [];
+    private readonly Dictionary<string, Texture2DArray> cachedGameTextures = [];
+    private readonly Dictionary<string, Material[]> cachedMaterials = [];
 
     public void Initialize()
     {
@@ -43,15 +43,12 @@ public class TextureController
 #if DEBUG
         var watch = Stopwatch.StartNew();
 #endif
-        var combined = loaderV2.LoadPack(meta);
+        var combined = loaderV2.LoadPack(meta).Result;
 
         // todo: add to remote server + offline for names->key
         Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}");
-        foreach (var pair in combined)
-        {
-            if (meta.ForceNew) ApplyFrom(pair.Key, CreateTextureArray([.. pair.Value.OrderBy(x => x.Key).Select(x => x.Value)]));
-            else ApplyTo(pair.Key, pair.Value);
-        }
+        var applier = new TextureApplier(cachedGameTextures, cachedMaterials);
+        applier.Start(meta, combined);
 
 #if DEBUG
         watch.Stop();
@@ -74,75 +71,7 @@ public class TextureController
         }
     }
 
-    private void ApplyFrom(string textureName, Texture2DArray textures)
-    {
-        var materials = FindMaterialByTextureName(textureName);
-        if (materials.Length == 0)
-        {
-            Main.Log("Failed to find textures for " + textureName, BepInEx.Logging.LogLevel.Error);
-            return;
-        }
-
-        CacheGameTextures(textureName, materials.First().GetTexture("_BaseMap_Atlas") as Texture2DArray);
-        foreach (var material in materials)
-        {
-            Main.Log($"Applying {textureName} to {material.name}");
-            material.SetTexture("_BaseMap_Atlas", textures);
-        }
-    }
-
-    private void ApplyTo(string textureName, Dictionary<int, Texture2D> combined)
-    {
-        var materials = FindMaterialByTextureName(textureName);
-        var atlas = materials.First().GetTexture("_BaseMap_Atlas") as Texture2DArray;
-        CacheGameTextures(textureName, atlas);
-
-        try
-        {
-            var newAtlas = new Texture2DArray(atlas.width, atlas.height, atlas.depth, TextureFormat.DXT5, false, false); // lin true, bc7 compresison TextureFormat.DXT5
-            for (int i = 0; i < atlas.depth; i++)
-            {
-                if (combined.TryGetValue(i, out var texture))
-                {
-                    Main.Log("Copying modified " + i, BepInEx.Logging.LogLevel.Debug);
-                    Graphics.CopyTexture(texture, 0, 0, newAtlas, i, 0);
-                    continue;
-                }
-                // base slice
-                Main.Log("Copying base " + i, BepInEx.Logging.LogLevel.Debug);
-                var renderTexture = RenderTexture.GetTemporary(atlas.width, atlas.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
-                var sliceTexture = new Texture2D(atlas.width, atlas.height, TextureFormat.BC7, false, true);
-                Graphics.CopyTexture(atlas, i, 0, sliceTexture, 0, 0);
-                Graphics.Blit(sliceTexture, renderTexture);
-
-                var readback = new Texture2D(atlas.width, atlas.height, TextureFormat.RGBA32, false, true);
-                RenderTexture.active = renderTexture;
-                readback.ReadPixels(new Rect(0, 0, atlas.width, atlas.height), 0, 0);
-                readback.Apply();
-                RenderTexture.ReleaseTemporary(renderTexture);
-                GameObject.Destroy(sliceTexture);
-
-                var dxt5 = new Texture2D(atlas.width, atlas.height, TextureFormat.RGBA32, false, true);
-                Graphics.CopyTexture(readback, dxt5);
-                dxt5.Apply(false);
-                GameObject.Destroy(readback);
-
-                dxt5.Compress(true);
-                Graphics.CopyTexture(dxt5, 0, 0, newAtlas, i, 0);
-                // GameObject.Destroy(dxt5);
-            }
-
-            newAtlas.name = textureName;
-            newAtlas.filterMode = FilterMode.Point;
-            materials.ForEach(mat => mat.SetTexture("_BaseMap_Atlas", newAtlas));
-        }
-        catch (Exception ex)
-        {
-            Main.Log($"Failed to apply texture {textureName} {ex.Message}", BepInEx.Logging.LogLevel.Error);
-        }
-    }
-
-    private Texture2DArray CreateTextureArray(Texture2D[] textures)
+    public Texture2DArray CreateTextureArray(Texture2D[] textures)
     {
         var slice0 = textures[0];
         Main.Log($"Creating array with {textures.Length} slices {slice0.width}x{slice0.height} pixels", BepInEx.Logging.LogLevel.Debug);
@@ -170,7 +99,7 @@ public class TextureController
         return textureArray;
     }
 
-    private void CacheGameTextures(string textureName, Texture2DArray atlas)
+    public void CacheGameTextures(string textureName, Texture2DArray atlas)
     {
         if (!cachedGameTextures.ContainsKey(textureName))
         {
@@ -188,7 +117,7 @@ public class TextureController
     }
 
     // note: cant just edit shared materials due to pitground mat
-    private Material[] FindMaterialByTextureName(string name)
+    public Material[] FindMaterialByTextureName(string name)
     {
         if (cachedMaterials.TryGetValue(name, out var cached))
             return cached;

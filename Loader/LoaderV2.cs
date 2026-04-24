@@ -51,7 +51,7 @@ public class LoaderV2 : ILoader
         })];
     }
 
-    public Dictionary<string, Dictionary<int, Texture2D>> LoadPack(TexturePackMeta meta)
+    public async Task<Dictionary<string, Dictionary<int, Texture2D>>> LoadPack(TexturePackMeta meta)
     {
         Main.Log("Attempting to load pack to memory", BepInEx.Logging.LogLevel.Message);
         var result = new Dictionary<string, Dictionary<int, Texture2D>>();
@@ -72,12 +72,10 @@ public class LoaderV2 : ILoader
             // texture.Apply()
             // // todo: add automated resizing of badly made textures
 
-
-            int index = int.Parse(entry.Name.RemoveStart("slice_").RemoveEnd(".png"));
-            if (result.TryGetValue(atlasName, out var dict)) dict.Add(index, texture);
-            else result.Add(atlasName, new Dictionary<int, Texture2D> { { index, texture } });
-
-            // Main.Log("Finished");
+            // remap
+            int sliceIndex = await RemapManager.Instance.RemapTexture(entry.Name.RemoveStart("slice_").RemoveEnd(".png"), meta.CompiledGameVersion);
+            if (!result.ContainsKey(atlasName)) result[atlasName] = [];
+            result[atlasName][sliceIndex] = texture;
         }
 
         return result;
