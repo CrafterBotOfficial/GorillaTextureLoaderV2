@@ -35,7 +35,7 @@ public class RemapManager
                 if (remaps.GameVersion == gameVersion)
                 {
                     Main.Log("Using local remaps");
-                    Remaps = remaps.Remaps;
+                    Remaps = JoinDictionaries([..remaps.Remaps.Values]);
                 }
             }
             else
@@ -44,12 +44,27 @@ public class RemapManager
                 using var client = new HttpClient();
                 var response = await client.GetAsync(BASE_URL + "Remaps.json");
                 if (!response.IsSuccessStatusCode) throw new System.Exception("Failed to get remote remaps. Mod will not work. " + response.StatusCode);
-                Remaps = JsonConvert.DeserializeObject<RemapsJson>(await response.Content.ReadAsStringAsync()).Remaps;
+                var allRemaps = JsonConvert.DeserializeObject<RemapsJson>(await response.Content.ReadAsStringAsync()).Remaps;
+                Remaps = JoinDictionaries([..allRemaps.Values]);
             }
         }
 
         return Remaps[texture_name];
     }
 
-    private record struct RemapsJson(string GameVersion, Dictionary<string, int> Remaps);
+    private Dictionary<string, int> JoinDictionaries(Dictionary<string, int>[] dictionaries)
+    {
+        // return dictionaries[1];
+        var result = new Dictionary<string, int>(dictionaries[0]);
+        for (int i = 1; i < dictionaries.Length; i++)
+        {
+            foreach (var keyValuePair in dictionaries[i])
+            {
+                result.Add(keyValuePair.Key, keyValuePair.Value);
+            }
+        }
+        return result;
+    }
+
+    private record struct RemapsJson(string GameVersion,  Dictionary<string, Dictionary<string, int>> Remaps);
 }
