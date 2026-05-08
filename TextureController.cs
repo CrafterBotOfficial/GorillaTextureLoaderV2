@@ -58,7 +58,7 @@ public class TextureController
         }
     }
 
-    public void LoadPack(TexturePackMeta meta)
+    public async void LoadPack(TexturePackMeta meta)
     {
         UnloadPack();
         if (!meta.IsVerified)
@@ -71,28 +71,25 @@ public class TextureController
             }
         }
 
+        Main.Notify("Loading pack...");
+        await Task.Delay(500); // jank
+
 #if DEBUG
         var watch = Stopwatch.StartNew();
 #endif
-        var ok = loaderV2.LoadPack(meta);//.ContinueWith(task => // todo: verify works
-        // {
-            // if (task.IsFaulted)
-            // {
-            //     Main.Log($"Failed to load pack {meta.Name} {task.Exception}");
-            //     return;
-            // }
 
-            // todo: add to remote server + offline for names->key
-            Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}");
-            var applier = new TextureApplier(cachedGameTextures, cachedMaterials);
-            applier.Start(meta, ok.Result);
+        var textures = loaderV2.LoadPack(meta);
+        Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}");
+
+        var applier = new TextureApplier(cachedGameTextures, cachedMaterials);
+        applier.Start(meta, textures);
 
 #if DEBUG
-            watch.Stop();
-            Main.Log($"Finished in {watch.Elapsed.Seconds} {watch.Elapsed.Milliseconds}ms");
+        watch.Stop();
+        Main.Log($"Finished in {watch.Elapsed.Seconds} {watch.Elapsed.Milliseconds}ms");
 #endif
-            Current = meta;
-        // });
+        Current = meta;
+        Main.Notify("Loaded " + Current.Name);
     }
 
     public void UnloadPack()
