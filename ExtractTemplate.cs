@@ -31,13 +31,12 @@ public class ExtractTemplate : MonoBehaviour
             Directory.CreateDirectory(outputDirectory);
 
             var remaps = await RemapManager.Instance.GetRemapsWithAtlas();
-            // var atlases = GameObject.FindObjectsByType<Material>(sortMode: FindObjectsSortMode.None).Where(material => remaps.ContainsKey(material.name)).Select(material => material.GetTexture("_BaseMap_Atlas") as Texture2DArray);
             foreach (var atlasMap in remaps)
             {
                 Main.Log($"{atlasMap.Key}", BepInEx.Logging.LogLevel.Message);
 
                 // todo: split FindMaterialByTextureName into 2 methjods
-                if (TextureController.Instance.FindMaterialByTextureName(atlasMap.Key).First().GetTexture("_BaseMap_Atlas") is not Texture2DArray atlas) continue;
+                if (TextureController.GetTextureCache().FindTextureByName(atlasMap.Key).FirstOrDefault() is not Texture2DArray atlas) continue;
 
                 foreach (var map in atlasMap.Value)
                 {

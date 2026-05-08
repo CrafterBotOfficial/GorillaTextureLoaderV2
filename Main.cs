@@ -19,6 +19,7 @@ public class Main : BaseUnityPlugin
     {
         Instance = this;
         notifier = new Notifier("TextureLoader");
+        Configuration.Initialize(Config);
         GorillaTagger.OnPlayerSpawned(TextureController.Instance.Initialize);
 
 #if DEBUG
@@ -58,6 +59,7 @@ public class Main : BaseUnityPlugin
 
     public static void Notify(string message, bool isError = false, bool isWarning = false)
     {
+        Log(message, isError ? LogLevel.Error : isWarning ? LogLevel.Warning : LogLevel.Info);
         if (isError) Instance.notifier.Error(message);
         else if (isWarning) Instance.notifier.Warning(message);
         else Instance.notifier.Message(message);
