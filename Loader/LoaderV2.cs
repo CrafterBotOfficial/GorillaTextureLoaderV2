@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -15,7 +16,7 @@ namespace GorillaTextureLoader.Loader;
 /// </summary>
 public class LoaderV2 : ILoader
 {
-    private Dictionary<TexturePackMeta, Dictionary<string, Texture2DArray>> cache = [];
+    private static string WhitelistedPack;
 
     public async Task<TexturePackMeta[]> LoadAllMetadatas()
     {
@@ -56,7 +57,7 @@ public class LoaderV2 : ILoader
         Main.Log("Attempting to load pack to memory", BepInEx.Logging.LogLevel.Message);
         var result = new Dictionary<string, Dictionary<int, Texture2D>>();
         using var archive = ZipFile.OpenRead(meta.ZipFilePath);
-        foreach (var entry in archive.Entries.Where(entry => entry.FullName.EndsWith(".png") && entry.Name.StartsWith("slice_")))
+        foreach (var entry in archive.Entries.Where(entry => entry.FullName.EndsWith(".png")))
         {
             string atlasName = Path.GetDirectoryName(entry.FullName);
             // Main.Log(entry.FullName + " to " + atlasName);
@@ -73,8 +74,10 @@ public class LoaderV2 : ILoader
             // // todo: add automated resizing of badly made textures
 
             // remap
-            int sliceIndex = await RemapManager.Instance.RemapTexture(entry.Name.RemoveStart("slice_").RemoveEnd(".png"), meta.CompiledGameVersion);
+            string sanitizedName = entry.Name.RemoveStart("slice_").RemoveEnd(".png");
+            int sliceIndex = meta.ForceNew ? int.Parse(sanitizedName) : await RemapManager.Instance.RemapTexture(sanitizedName, meta.CompiledGameVersion);
             if (!result.ContainsKey(atlasName)) result[atlasName] = [];
+            Main.Log($"Mapped {atlasName} {sliceIndex} {texture.name}");
             result[atlasName][sliceIndex] = texture;
         }
 
@@ -83,16 +86,28 @@ public class LoaderV2 : ILoader
 
     private string GetHash(FileStream stream)
     {
+        stream.Position = 0;
         using var hashAlgorithm = SHA256.Create();
         var hashBytes = hashAlgorithm.ComputeHash(stream);
-        return BitConverter.ToString(hashBytes);
+        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
     }
 
-    // Todo
-    // To prevent cheating by making wall hacks
     private async Task<bool> IsVerified(string hash)
     {
-        Main.Log($"Checking {hash} against whitelist", BepInEx.Logging.LogLevel.Debug);
-        return true;
+        if (WhitelistedPack is null || WhitelistedPack.Length == 0)
+        {
+            try
+            {
+                using var httpClient = new HttpClient();
+                WhitelistedPack = await httpClient.GetStringAsync("https://git.crafterbot.com/Crafterbot/GorillaTextureLoader/raw/branch/v2/verified.csv");
+            }
+            catch (Exception ex)
+            {
+                Main.Log($"Failed to grab verified list. Exception: {ex}");
+                return false;
+            }
+        }
+
+        return WhitelistedPack.Contains(hash);
     }
 }

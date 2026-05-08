@@ -10,46 +10,22 @@ namespace GorillaTextureLoader;
 public class RemapManager
 {
     private static Lazy<RemapManager> instance = new Lazy<RemapManager>(() => new RemapManager());
-    public static RemapManager Instance = instance.Value;
+    public static RemapManager Instance => instance.Value;
 
     private const string BASE_URL = "https://git.crafterbot.com/Crafterbot/GorillaTextureLoader/raw/branch/v2/";
 
-    public Dictionary<string, int> Remaps;
+    private RemapsJson json;
+    public Dictionary<string, int> remaps; // without atlas names, since they aren't needed
 
     public RemapManager()
     {
 
     }
 
+    // todo: download remote remaps to allow offline play
     public async Task<int> RemapTexture(string texture_name, string compiledGameVersion)
     {
-        string gameVersion = GorillaNetworking.GorillaComputer.instance.version;
-        Main.Log($"Game version {gameVersion} texturepack version {compiledGameVersion}", BepInEx.Logging.LogLevel.Debug);
-        if (Remaps is null)
-        {
-            using var stream = typeof(RemapManager).Assembly.GetManifestResourceStream("GorillaTextureLoader.Remaps.json");
-            if (stream is not null)
-            {
-                using var reader = new StreamReader(stream);
-                var remaps = JsonConvert.DeserializeObject<RemapsJson>(await reader.ReadToEndAsync());
-                if (remaps.GameVersion == gameVersion)
-                {
-                    Main.Log("Using local remaps");
-                    Remaps = JoinDictionaries([..remaps.Remaps.Values]);
-                }
-            }
-            else
-            {
-                Main.Log("Fetching remote remaps");
-                using var client = new HttpClient();
-                var response = await client.GetAsync(BASE_URL + "Remaps.json");
-                if (!response.IsSuccessStatusCode) throw new System.Exception("Failed to get remote remaps. Mod will not work. " + response.StatusCode);
-                var allRemaps = JsonConvert.DeserializeObject<RemapsJson>(await response.Content.ReadAsStringAsync()).Remaps;
-                Remaps = JoinDictionaries([..allRemaps.Values]);
-            }
-        }
-
-        return Remaps[texture_name];
+        return (await GetRemaps())[texture_name];
     }
 
     private Dictionary<string, int> JoinDictionaries(Dictionary<string, int>[] dictionaries)
@@ -66,5 +42,53 @@ public class RemapManager
         return result;
     }
 
-    private record struct RemapsJson(string GameVersion,  Dictionary<string, Dictionary<string, int>> Remaps);
+    public async Task<Dictionary<string, Dictionary<string, int>>> GetRemapsWithAtlas()
+    {
+        await GetRemaps();
+        return json.Remaps;
+    }
+
+    public async Task<Dictionary<string, int>> GetRemaps()
+    {
+        string gameVersion = GorillaNetworking.GorillaComputer.instance.version;
+        Main.Log($"Game version {gameVersion}", BepInEx.Logging.LogLevel.Debug);
+
+        if (remaps is null)
+        {
+            using var stream = typeof(RemapManager).Assembly.GetManifestResourceStream("GorillaTextureLoader.Remaps.json");
+            if (stream is not null)
+            {
+                using var reader = new StreamReader(stream);
+                json = JsonConvert.DeserializeObject<RemapsJson>(await reader.ReadToEndAsync());
+                if (json.GameVersion == gameVersion)
+                {
+                    Main.Log("Using local remaps");
+                    remaps = JoinDictionaries([.. json.Remaps.Values]);
+                }
+            }
+            else
+            {
+                Main.Log("Fetching remote remaps");
+                using var client = new HttpClient();
+                var response = await client.GetAsync(BASE_URL + "Remaps.json");
+                if (!response.IsSuccessStatusCode) throw new System.Exception("Failed to get remote remaps. Mod will not work. " + response.StatusCode);
+                json = JsonConvert.DeserializeObject<RemapsJson>(await response.Content.ReadAsStringAsync());
+                remaps = JoinDictionaries([.. json.Remaps.Values]);
+            }
+        }
+
+        return remaps;
+    }
+
+    public async Task<string> GetLatestVersion()
+    {
+        if (string.IsNullOrEmpty(json.GameVersion))
+        {
+            await GetRemaps(); // force populate gamever
+        }
+
+        return json.GameVersion;
+    }
+
+    private record struct RemapsJson(string GameVersion, Dictionary<string, Dictionary<string, int>> Remaps);
 }

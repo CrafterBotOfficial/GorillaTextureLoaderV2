@@ -2,14 +2,11 @@ using BepInEx;
 using BepInEx.Logging;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Utilla.Attributes;
 
 namespace GorillaTextureLoader;
 
 [BepInPlugin("crafterbot.dumbmonkegame.textureloader", "TextureLoader", "2.0.0")]
-[BepInDependency("org.legoandmars.gorillatag.utilla", "1.6.0")]
 [BepInDependency("crafterbot.gorillatag.computer", "1.1.0")]
-[ModdedGamemode]
 public class Main : BaseUnityPlugin
 {
     private static Main instance;
@@ -17,7 +14,7 @@ public class Main : BaseUnityPlugin
     private void Awake()
     {
         instance = this;
-        TextureController.Instance.Initialize();
+        GorillaTagger.OnPlayerSpawned(TextureController.Instance.Initialize);
 
 #if DEBUG
         SceneManager.sceneLoaded += async (scene, _) =>
@@ -34,6 +31,11 @@ public class Main : BaseUnityPlugin
     {
         if (!TextureController.Instance.PackMetas.IsCompleted) return;
 
+        if (GUILayout.Button("Clear Weather"))
+        {
+            BetterDayNightManager.instance.SetFixedWeather(BetterDayNightManager.WeatherType.None);
+            BetterDayNightManager.instance.SetTimeOfDay(4);
+        }
         if (GUILayout.Button("Reset"))
             TextureController.Instance.UnloadPack();
         foreach (var pack in TextureController.Instance.PackMetas.Result)
@@ -43,16 +45,6 @@ public class Main : BaseUnityPlugin
             }
     }
 #endif
-
-    [ModdedGamemodeJoin]
-    private void OnJoin()
-    {
-    }
-
-    [ModdedGamemodeLeave]
-    private void OnLeave()
-    {
-    }
 
     public static void Log(object message, LogLevel level = LogLevel.Info)
     {

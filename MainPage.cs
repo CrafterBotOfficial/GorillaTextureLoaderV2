@@ -1,19 +1,17 @@
 using System;
+using System.Linq;
 using GorillaNetworking;
 using Jerald;
-using UnityEngine;
 
 [assembly: AutoRegister]
 namespace GorillaTextureLoader;
 
 [AutoRegister]
-public class MainPage : Page
+public class MainPage : ListPage
 {
     public static Action Update;
 
     public override string PageName => "TextureLoader";
-
-    private int index;
 
     public MainPage()
     {
@@ -28,22 +26,21 @@ public class MainPage : Page
 
         string result = "GorillaTextureLoader v2";
         var metas = instance.PackMetas.Result;
-        for (int i = 0; i < metas.Length; i++)
-            result += $"\n[{(instance.Current == metas[i] ? 'x' : ' ')}] {metas[i].Name} {(i == index ? " <--" : "")}";
+        Items = metas.Select(x => x.Name);
+        Initialize();
 
         return result;
     }
 
     public override void OnKeyPress(GorillaKeyboardBindings key)
     {
+        base.OnKeyPress(key);
         if (key == GorillaKeyboardBindings.enter)
         {
-            TextureController.Instance.LoadPack(TextureController.Instance.PackMetas.Result[index]);
-        }
-        else
-        {
-            index += key == GorillaKeyboardBindings.W ? -1 : key == GorillaKeyboardBindings.S ? 1 : 0;
-            index = Mathf.Clamp(index, 0, TextureController.Instance.PackMetas.Result.Length - 1);
+            // var meta = TextureController.Instance.PackMetas.Result[];
+            // TextureController.Instance.UnloadPack();
+            // TextureController.Instance.LoadPack(meta);
+            // Configuration.CurrentTexturePack.Value = meta.Id;
         }
         UpdateContent();
     }
