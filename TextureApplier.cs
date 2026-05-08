@@ -5,18 +5,9 @@ using UnityEngine;
 
 namespace GorillaTextureLoader;
 
-public class TextureApplier
+public class TextureApplier(Dictionary<string, Texture2DArray> cachedGameTextures, Dictionary<string, Material[]> cachedMaterials)
 {
-    private List<Material> sharedMaterials = [];
-
-    private Dictionary<string, Texture2DArray> cachedGameTextures = [];
-    private Dictionary<string, Material[]> cachedMaterials = [];
-
-    public TextureApplier(Dictionary<string, Texture2DArray> cachedGameTextures, Dictionary<string, Material[]> cachedMaterials)
-    {
-        this.cachedGameTextures = cachedGameTextures;
-        this.cachedMaterials = cachedMaterials;
-    }
+    private List<Material> processedMaterials = [];
 
     public void Start(TexturePackMeta meta, Dictionary<string, Dictionary<int, Texture2D>> combined)
     {
@@ -47,10 +38,10 @@ public class TextureApplier
     private void ApplyTo(string textureName, Dictionary<int, Texture2D> combined)
     {
         var materials = TextureController.Instance.FindMaterialByTextureName(textureName)
-            .Where(mat => !sharedMaterials.Contains(mat))
+            .Where(mat => !processedMaterials.Contains(mat))
             .ToArray();
         if (materials.Length == 0) return;
-        sharedMaterials.AddRange(materials);
+        processedMaterials.AddRange(materials);
 
         var atlas = materials.First().GetTexture("_BaseMap_Atlas") as Texture2DArray;
         TextureController.Instance.CacheGameTextures(textureName, atlas);

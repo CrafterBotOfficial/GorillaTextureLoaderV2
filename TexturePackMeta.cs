@@ -10,6 +10,7 @@ public record class TexturePackMeta(
     bool ForceNew // todo: rename
 )
 {
+    [JsonIgnore] public string Id = $"{Name}.{Author}";
     [JsonIgnore] public bool IsVerified;
     [JsonIgnore] public string ZipFilePath;
 }

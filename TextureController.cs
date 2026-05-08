@@ -1,8 +1,3 @@
-/*
- * TexArrayAtlas_2048x2048_BC7_AllScenes - forestatlas
- * TexArrayAtlas_256x256_BC7_AllScenes - pitground
- */
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,6 +9,8 @@ using UnityEngine;
 
 namespace GorillaTextureLoader;
 
+// Singleton class to control all texture related operations
+// The actual texture applier is a different thing, although both share a bunch of methods
 public class TextureController
 {
     private static Lazy<TextureController> instance = new Lazy<TextureController>(() => new TextureController());
@@ -21,7 +18,7 @@ public class TextureController
 
     public const string TEXTURE_PACK_FILE_PREFIX = "*.pack";
 
-    public string TexturePackPath = Path.Combine("BepInEx", "plugins", "GorillaTextureLoader", "packs"); // Todo: Make reliable
+    public string TexturePackPath;
 
     public Task<TexturePackMeta[]> PackMetas;
     public TexturePackMeta Current;
@@ -34,32 +31,73 @@ public class TextureController
 
     public void Initialize()
     {
+        TexturePackPath = Path.Combine(BepInEx.Paths.PluginPath, "GorillaTextureLoader", "packs");
+        try { Directory.CreateDirectory(TexturePackPath); } catch { }
+
+        new GameObject().AddComponent<ExtractTemplate>();
+        NetworkSystem.Instance.OnJoinedRoomEvent += () =>
+        {
+            if (!InModdedRoom()) UnloadPack();
+        }; // do not load if unable to stop unmodded
+
         PackMetas = LoadAllPackMetasAsync();
-        PackMetas.ContinueWith(_ => { if (Jerald.PageManager.Instance.GetPage() is MainPage) MainPage.Update(); }); // ensure page updates when all packs are loaded
+        PackMetas.ContinueWith(_ =>
+        {
+            if (Jerald.PageManager.Instance.GetPage() is MainPage) MainPage.Update(); // ensure page updates when all packs are loaded
+
+            if (GorillaTagger.Instance.offlineVRRig is not null) AutoLoadPack();
+            else GorillaTagger.OnPlayerSpawned(AutoLoadPack);
+        });
+    }
+
+    private void AutoLoadPack()
+    {
+        if (PackMetas.Result.FirstOrDefault(x => x.Id == Configuration.CurrentTexturePack.Value) is TexturePackMeta meta && meta.IsVerified)
+        {
+            LoadPack(meta);
+        }
     }
 
     public void LoadPack(TexturePackMeta meta)
     {
+        UnloadPack();
+        if (!meta.IsVerified)
+        {
+            Main.Log("Pack univerified");
+            if (!InModdedRoom())
+            {
+                Main.Log("Pack not allowed in unmodded rooms", BepInEx.Logging.LogLevel.Warning);
+                return;
+            }
+        }
+
 #if DEBUG
         var watch = Stopwatch.StartNew();
 #endif
-        var combined = loaderV2.LoadPack(meta).Result;
+        var ok = loaderV2.LoadPack(meta);//.ContinueWith(task => // todo: verify works
+        // {
+            // if (task.IsFaulted)
+            // {
+            //     Main.Log($"Failed to load pack {meta.Name} {task.Exception}");
+            //     return;
+            // }
 
-        // todo: add to remote server + offline for names->key
-        Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}");
-        var applier = new TextureApplier(cachedGameTextures, cachedMaterials);
-        applier.Start(meta, combined);
+            // todo: add to remote server + offline for names->key
+            Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}");
+            var applier = new TextureApplier(cachedGameTextures, cachedMaterials);
+            applier.Start(meta, ok.Result);
 
 #if DEBUG
-        watch.Stop();
-        Main.Log($"Finished in {watch.Elapsed.Seconds} {watch.Elapsed.Milliseconds}ms");
+            watch.Stop();
+            Main.Log($"Finished in {watch.Elapsed.Seconds} {watch.Elapsed.Milliseconds}ms");
 #endif
-        Current = meta;
+            Current = meta;
+        // });
     }
 
     public void UnloadPack()
     {
-        if (Current is null || cachedGameTextures.Count == 0)
+        if (Current is null)
             return;
         Main.Log("Reset");
         Current = null;
@@ -70,6 +108,7 @@ public class TextureController
                 material.SetTexture("_BaseMap_Atlas", texturePair.Value);
         }
     }
+
 
     public Texture2DArray CreateTextureArray(Texture2D[] textures)
     {
@@ -133,12 +172,19 @@ public class TextureController
         return materials;
     }
 
-    // Todo: Add legacy loader
+    // Todo: Add legacy loader, if reasonably possible
     public async Task<TexturePackMeta[]> LoadAllPackMetasAsync()
     {
         if (metadatas is not null) return metadatas;
         var result = await loaderV2.LoadAllMetadatas();
         metadatas = result;
         return result;
+    }
+
+    // To allow verified packs to work without utilla
+    private bool InModdedRoom()
+    {
+        var networkSystem = NetworkSystem.Instance;
+        return !networkSystem.InRoom || networkSystem.GameModeString.StartsWith("MODDED_");
     }
 }
