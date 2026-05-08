@@ -23,9 +23,9 @@ public class RemapManager
     }
 
     // todo: download remote remaps to allow offline play
-    public async Task<int> RemapTexture(string texture_name, string compiledGameVersion)
+    public int RemapTexture(string texture_name)
     {
-        return (await GetRemaps())[texture_name];
+        return GetRemaps().Result[texture_name]; // getremaps should be called on game start to avoid blocking
     }
 
     private Dictionary<string, int> JoinDictionaries(Dictionary<string, int>[] dictionaries)

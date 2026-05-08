@@ -1,5 +1,6 @@
 using BepInEx;
 using BepInEx.Logging;
+using MonkeNotificationLib;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -7,13 +8,17 @@ namespace GorillaTextureLoader;
 
 [BepInPlugin("crafterbot.dumbmonkegame.textureloader", "TextureLoader", "2.0.0")]
 [BepInDependency("crafterbot.gorillatag.computer", "1.1.0")]
+[BepInDependency("crafterbot.notificationlib", "1.1.0")]
 public class Main : BaseUnityPlugin
 {
-    private static Main instance;
+    public static Main Instance;
+
+    private INotifier notifier;
 
     private void Awake()
     {
-        instance = this;
+        Instance = this;
+        notifier = new Notifier("TextureLoader");
         GorillaTagger.OnPlayerSpawned(TextureController.Instance.Initialize);
 
 #if DEBUG
@@ -48,6 +53,13 @@ public class Main : BaseUnityPlugin
 
     public static void Log(object message, LogLevel level = LogLevel.Info)
     {
-        instance.Logger.Log(level, message);
+        Instance.Logger.Log(level, message);
+    }
+
+    public static void Notify(string message, bool isError = false, bool isWarning = false)
+    {
+        if (isError) Instance.notifier.Error(message);
+        else if (isWarning) Instance.notifier.Warning(message);
+        else Instance.notifier.Message(message);
     }
 }
