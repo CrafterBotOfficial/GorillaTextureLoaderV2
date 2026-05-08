@@ -21,35 +21,40 @@ public class LoaderV2 : ILoader
     public async Task<TexturePackMeta[]> LoadAllMetadatas()
     {
         Main.Log("Loading all v2 texture pack's metadata...");
-        return [..await Task.Run(async () =>
-        {
-            var result = new List<TexturePackMeta>();
-            foreach (string file in Directory.EnumerateFiles(TextureController.Instance.TexturePackPath, TextureController.TEXTURE_PACK_FILE_PREFIX, SearchOption.AllDirectories))
-            {
-                try
-                {
-                    Main.Log("Attempting to open " + file, BepInEx.Logging.LogLevel.Debug);
-                    using var fileStream = File.Open(file, FileMode.Open);
-                    using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
-                    var entry = zipArchive.GetEntry("package.json") ?? throw new Exception("No metadata found!");
-                    using var entryStream = entry.Open();
-                    string raw = new StreamReader(entryStream).ReadToEnd();
+        var files = Directory.EnumerateFiles(
+            Paths.TexturePackDirectory,
+            Paths.TEXTURE_PACK_FILE_SUFFIX,
+            SearchOption.AllDirectories);
+        var tasks = files.Select(LoadMetadata);
+        return await Task.WhenAll(tasks);
+    }
 
-                    var metadata = JsonConvert.DeserializeObject<TexturePackMeta>(raw);
-                    result.Add(metadata with
-                    {
-                        IsVerified = await IsVerified(GetHash(fileStream)),
-                        ZipFilePath = file,
-                    });
-                    Main.Log("Done.", BepInEx.Logging.LogLevel.Debug);
-                }
-                catch (Exception ex)
-                {
-                    Main.Log($"Failed to read {file} {ex.Message} {ex.StackTrace}", BepInEx.Logging.LogLevel.Warning);
-                }
-            }
-            return result;
-        })];
+    private async Task<TexturePackMeta> LoadMetadata(string file)
+    {
+        try
+        {
+            Main.Log("Attempting to open " + file, BepInEx.Logging.LogLevel.Debug);
+            using var fileStream = File.Open(file, FileMode.Open);
+            string hash = GetHash(fileStream);
+            using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
+            var entry = zipArchive.GetEntry("package.json") ?? throw new Exception("No metadata found!");
+
+            using var entryStream = entry.Open();
+            using var streamReader = new StreamReader(entryStream);
+            string raw = streamReader.ReadToEnd();
+
+            var metadata = JsonConvert.DeserializeObject<TexturePackMeta>(raw);
+            return metadata with
+            {
+                IsVerified = await IsVerified(hash),
+                ZipFilePath = file,
+            };
+        }
+        catch (Exception ex)
+        {
+            Main.Log($"Failed to read {file} {ex.Message} {ex.StackTrace}", BepInEx.Logging.LogLevel.Warning);
+            return null;
+        }
     }
 
     public Dictionary<string, Dictionary<int, Texture2D>> LoadPack(TexturePackMeta meta)
@@ -87,13 +92,12 @@ public class LoaderV2 : ILoader
 
     private string GetHash(FileStream stream)
     {
-        stream.Position = 0;
         using var hashAlgorithm = SHA256.Create();
         var hashBytes = hashAlgorithm.ComputeHash(stream);
         return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
     }
 
-    private async Task<bool> IsVerified(string hash)
+    private async Task<bool> IsVerified(string hash) // todo: prevent race condition
     {
         if (WhitelistedPack is null || WhitelistedPack.Length == 0)
         {

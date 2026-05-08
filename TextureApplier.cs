@@ -5,46 +5,61 @@ using UnityEngine;
 
 namespace GorillaTextureLoader;
 
-public class TextureApplier(Dictionary<string, Texture2DArray> cachedGameTextures, Dictionary<string, Material[]> cachedMaterials)
+public class TextureApplier(TextureCache cache)
 {
-    private List<Material> processedMaterials = [];
+    private readonly List<Material> processedMaterials = [];
 
     public void Start(TexturePackMeta meta, Dictionary<string, Dictionary<int, Texture2D>> combined)
     {
+        var cacheBuilder = new Dictionary<string, Texture2DArray>();
         foreach (var pair in combined)
         {
-            if (meta.ForceNew) ApplyFrom(pair.Key, TextureController.Instance.CreateTextureArray([.. pair.Value.OrderBy(x => x.Key).Select(x => x.Value)]));
-            else ApplyTo(pair.Key, pair.Value);
+            // force new is for the upscaled textures
+            // if (meta.ForceNew) ApplyFrom(pair.Key, TextureController.Instance.CreateTextureArray([.. pair.Value.OrderBy(x => x.Key).Select(x => x.Value)]));
+            // else 
+            (string textureName, var array) = ApplyTo(pair.Key, pair.Value);
+            if (Configuration.EnableCaching.Value)
+                cacheBuilder.Add(textureName, array);
+        }
+        cache.CacheTexturePack(meta, cacheBuilder);
+    }
+
+    // for cache
+    public void Start(Dictionary<string, Texture2DArray> textures)
+    {
+        foreach (var pair in textures)
+        {
+            ApplyFrom(pair.Key, pair.Value);
         }
     }
 
     private void ApplyFrom(string textureName, Texture2DArray textures)
     {
-        var materials = TextureController.Instance.FindMaterialByTextureName(textureName);
+        var materials = cache.FindMaterialByTextureName(textureName);
         if (materials.Length == 0)
         {
             Main.Log("Failed to find textures for " + textureName, BepInEx.Logging.LogLevel.Error);
             return;
         }
 
-        TextureController.Instance.CacheGameTextures(textureName, materials.First().GetTexture("_BaseMap_Atlas") as Texture2DArray);
+        cache.CacheGameTextures(textureName, materials.First().GetTexture(Paths.MAIN_ATLAS_KEY) as Texture2DArray);
         foreach (var material in materials)
         {
             Main.Log($"Applying {textureName} to {material.name}");
-            material.SetTexture("_BaseMap_Atlas", textures);
+            material.SetTexture(Paths.MAIN_ATLAS_KEY, textures);
         }
     }
 
-    private void ApplyTo(string textureName, Dictionary<int, Texture2D> combined)
+    private (string, Texture2DArray) ApplyTo(string textureName, Dictionary<int, Texture2D> combined)
     {
-        var materials = TextureController.Instance.FindMaterialByTextureName(textureName)
+        var materials = cache.FindMaterialByTextureName(textureName)
             .Where(mat => !processedMaterials.Contains(mat))
             .ToArray();
-        if (materials.Length == 0) return;
+        if (materials.Length == 0) return default;
         processedMaterials.AddRange(materials);
 
-        var atlas = materials.First().GetTexture("_BaseMap_Atlas") as Texture2DArray;
-        TextureController.Instance.CacheGameTextures(textureName, atlas);
+        var atlas = materials.First().GetTexture(Paths.MAIN_ATLAS_KEY) as Texture2DArray;
+        cache.CacheGameTextures(textureName, atlas);
 
         try
         {
@@ -78,16 +93,18 @@ public class TextureApplier(Dictionary<string, Texture2DArray> cachedGameTexture
 
                 dxt5.Compress(true);
                 Graphics.CopyTexture(dxt5, 0, 0, newAtlas, i, 0);
-                // GameObject.Destroy(dxt5);
+                GameObject.Destroy(dxt5);
             }
 
             newAtlas.name = textureName;
             newAtlas.filterMode = FilterMode.Point;
-            materials.ForEach(mat => mat.SetTexture("_BaseMap_Atlas", newAtlas));
+            materials.ForEach(mat => mat.SetTexture(Paths.MAIN_ATLAS_KEY, newAtlas));
+            return (textureName, newAtlas);
         }
         catch (Exception ex)
         {
             Main.Log($"Failed to apply texture {textureName} {ex.Message}", BepInEx.Logging.LogLevel.Error);
+            return default;
         }
     }
 }

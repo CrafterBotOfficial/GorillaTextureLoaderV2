@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using GorillaTextureLoader.Loader;
@@ -16,25 +15,17 @@ public class TextureController
     private static Lazy<TextureController> instance = new Lazy<TextureController>(() => new TextureController());
     public static TextureController Instance => instance.Value;
 
-    public const string TEXTURE_PACK_FILE_PREFIX = "*.pack";
-
-    public string TexturePackPath;
-
     public Task<TexturePackMeta[]> PackMetas;
     public TexturePackMeta Current;
 
     private readonly ILoader loaderV2 = new LoaderV2();
     private TexturePackMeta[] metadatas;
 
-    private readonly Dictionary<string, Texture2DArray> cachedGameTextures = [];
-    private readonly Dictionary<string, Material[]> cachedMaterials = [];
+    private TextureCache textureCache;
 
     public void Initialize()
     {
-        TexturePackPath = Path.Combine(BepInEx.Paths.PluginPath, "GorillaTextureLoader", "packs");
-        try { Directory.CreateDirectory(TexturePackPath); } catch { }
-
-        new GameObject().AddComponent<ExtractTemplate>();
+        new GameObject().AddComponent<ExtractTemplate>(); // todo: move
         NetworkSystem.Instance.OnJoinedRoomEvent += () =>
         {
             if (!InModdedRoom()) UnloadPack();
@@ -48,17 +39,23 @@ public class TextureController
             if (GorillaTagger.Instance.offlineVRRig is not null) AutoLoadPack();
             else GorillaTagger.OnPlayerSpawned(AutoLoadPack);
         });
+
+        textureCache = new TextureCache();
+        _ = RemapManager.Instance.GetRemaps(); // cache web response
     }
 
     private void AutoLoadPack()
     {
         if (PackMetas.Result.FirstOrDefault(x => x.Id == Configuration.CurrentTexturePack.Value) is TexturePackMeta meta && meta.IsVerified)
         {
-            LoadPack(meta);
+            LoadPack(meta).ContinueWith(task =>
+            {
+                Main.Log(task.Exception, BepInEx.Logging.LogLevel.Error);
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
     }
 
-    public async void LoadPack(TexturePackMeta meta)
+    public async Task LoadPack(TexturePackMeta meta)
     {
         UnloadPack();
         if (!meta.IsVerified)
@@ -78,11 +75,17 @@ public class TextureController
         var watch = Stopwatch.StartNew();
 #endif
 
-        var textures = loaderV2.LoadPack(meta);
-        Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}");
-
-        var applier = new TextureApplier(cachedGameTextures, cachedMaterials);
-        applier.Start(meta, textures);
+        var applier = new TextureApplier(textureCache);
+        if (Configuration.EnableCaching.Value && textureCache.TryGetTexturePack(meta, out Dictionary<string, Texture2DArray> textures))
+        {
+            Main.Log("Loading textures from cache");
+            applier.Start(textures);
+        }
+        else
+        {
+            Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}"); // force new not yet implimented fully
+            applier.Start(meta, loaderV2.LoadPack(meta));
+        }
 
 #if DEBUG
         watch.Stop();
@@ -98,11 +101,10 @@ public class TextureController
             return;
         Main.Log("Reset");
         Current = null;
-        foreach (var texturePair in cachedGameTextures)
+        foreach (var texturePair in textureCache.GetOriginalGameTextures())
         {
-            var materials = FindMaterialByTextureName(texturePair.Key);
-            foreach (var material in materials)
-                material.SetTexture("_BaseMap_Atlas", texturePair.Value);
+            var materials = textureCache.FindMaterialByTextureName(texturePair.Key);
+            foreach (var material in materials) material.SetTexture("_BaseMap_Atlas", texturePair.Value);
         }
     }
 
@@ -135,40 +137,6 @@ public class TextureController
         return textureArray;
     }
 
-    public void CacheGameTextures(string textureName, Texture2DArray atlas)
-    {
-        if (!cachedGameTextures.ContainsKey(textureName))
-        {
-            Main.Log("Saving default textures");
-            var cache = new Texture2DArray(atlas.width, atlas.height, atlas.depth, atlas.format, 0, false)
-            {
-                filterMode = atlas.filterMode,
-                anisoLevel = atlas.anisoLevel,
-                wrapMode = atlas.wrapMode,
-            };
-
-            Graphics.CopyTexture(atlas, cache);
-            cachedGameTextures.Add(textureName, cache);
-        }
-    }
-
-    // note: cant just edit shared materials due to pitground mat
-    public Material[] FindMaterialByTextureName(string name)
-    {
-        if (cachedMaterials.TryGetValue(name, out var cached))
-            return cached;
-
-        const string KEY = "_BaseMap_Atlas";
-        var materials = GameObject.FindObjectsByType<MeshRenderer>(sortMode: FindObjectsSortMode.InstanceID)
-            .Where(x => x.sharedMaterial is not null && x.sharedMaterial.HasTexture(KEY))
-            .Where(x => x.sharedMaterial.GetTexture(KEY)?.name == name)
-            .Select(x => x.sharedMaterial)
-            .ToArray();
-
-        cachedMaterials.Add(name, materials);
-        return materials;
-    }
-
     // Todo: Add legacy loader, if reasonably possible
     public async Task<TexturePackMeta[]> LoadAllPackMetasAsync()
     {
@@ -183,5 +151,11 @@ public class TextureController
     {
         var networkSystem = NetworkSystem.Instance;
         return !networkSystem.InRoom || networkSystem.GameModeString.StartsWith("MODDED_");
+    }
+
+    public static TextureCache GetTextureCache()
+    {
+        if (Instance?.textureCache is null) Main.Log("Texture cache not yet initialized", BepInEx.Logging.LogLevel.Warning); // todo verify not called and delete
+        return Instance?.textureCache ?? new TextureCache();
     }
 }
