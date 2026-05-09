@@ -28,20 +28,6 @@ public class RemapManager
         return GetRemaps().Result[texture_name]; // getremaps should be called on game start to avoid blocking
     }
 
-    private Dictionary<string, int> JoinDictionaries(Dictionary<string, int>[] dictionaries)
-    {
-        // return dictionaries[1];
-        var result = new Dictionary<string, int>(dictionaries[0]);
-        for (int i = 1; i < dictionaries.Length; i++)
-        {
-            foreach (var keyValuePair in dictionaries[i])
-            {
-                result.Add(keyValuePair.Key, keyValuePair.Value);
-            }
-        }
-        return result;
-    }
-
     public async Task<Dictionary<string, Dictionary<string, int>>> GetRemapsWithAtlas()
     {
         await GetRemaps();
@@ -88,6 +74,20 @@ public class RemapManager
         }
 
         return json.GameVersion;
+    }
+
+    private Dictionary<string, int> JoinDictionaries(Dictionary<string, int>[] dictionaries)
+    {
+        // return dictionaries[1];
+        var result = new Dictionary<string, int>(dictionaries[0]);
+        for (int i = 1; i < dictionaries.Length; i++)
+        {
+            foreach (var keyValuePair in dictionaries[i])
+            {
+                result.Add(keyValuePair.Key, keyValuePair.Value);
+            }
+        }
+        return result;
     }
 
     private record struct RemapsJson(string GameVersion, Dictionary<string, Dictionary<string, int>> Remaps);

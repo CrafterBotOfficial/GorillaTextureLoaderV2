@@ -47,7 +47,10 @@ public class Main : BaseUnityPlugin
         foreach (var pack in TextureController.Instance.PackMetas.Result)
             if (GUILayout.Button(pack.Name))
             {
-                TextureController.Instance.LoadPack(pack);
+                TextureController.Instance.LoadPack(pack).ContinueWith(task =>
+                 {
+                     Log(task.Exception, BepInEx.Logging.LogLevel.Error);
+                 }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
             }
     }
 #endif
