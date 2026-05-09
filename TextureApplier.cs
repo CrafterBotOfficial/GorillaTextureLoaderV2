@@ -73,7 +73,7 @@ public class TextureApplier(TextureCache cache)
                     continue;
                 }
                 // base slice
-                Main.Log("Copying base " + i, BepInEx.Logging.LogLevel.Debug);
+                // Main.Log("Copying base " + i, BepInEx.Logging.LogLevel.Debug);
                 var renderTexture = RenderTexture.GetTemporary(atlas.width, atlas.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
                 var sliceTexture = new Texture2D(atlas.width, atlas.height, TextureFormat.BC7, false, true);
                 Graphics.CopyTexture(atlas, i, 0, sliceTexture, 0, 0);

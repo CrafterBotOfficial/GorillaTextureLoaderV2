@@ -18,7 +18,8 @@ public class TextureCache
 
     public void CacheTexturePack(TexturePackMeta meta, Dictionary<string, Texture2DArray> namedTextures)
     {
-        cachedTexturePacks[meta] = namedTextures;
+        if (Configuration.EnableCaching.Value)
+            cachedTexturePacks[meta] = namedTextures;
     }
 
     public MeshRenderer[] FindRenderersByTextureName(string name)
