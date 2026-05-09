@@ -34,7 +34,7 @@ public class TextureController
         PackMetas = LoadAllPackMetasAsync();
         PackMetas.ContinueWith(_ =>
         {
-            if (Jerald.PageManager.Instance.GetPage() is MainPage) MainPage.Update(); // ensure page updates when all packs are loaded
+            // if (Jerald.PageManager.Instance.GetPage() is MainPage) MainPage.Update(); // ensure page updates when all packs are loaded
 
             if (GorillaTagger.Instance.offlineVRRig is not null) AutoLoadPack();
             else GorillaTagger.OnPlayerSpawned(AutoLoadPack);
