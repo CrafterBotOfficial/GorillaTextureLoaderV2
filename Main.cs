@@ -20,7 +20,11 @@ public class Main : BaseUnityPlugin
         Instance = this;
         notifier = new Notifier("TextureLoader");
         Configuration.Initialize(Config);
-        GorillaTagger.OnPlayerSpawned(TextureController.Instance.Initialize);
+        GorillaTagger.OnPlayerSpawned(() =>
+        {
+            TextureController.Instance.Initialize();
+            RemapManager.Instance.Initialize();
+        });
 
 #if DEBUG
         SceneManager.sceneLoaded += async (scene, _) =>

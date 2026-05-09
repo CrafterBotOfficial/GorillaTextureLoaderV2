@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using BepInEx.Logging;
 using Newtonsoft.Json;
 
 namespace GorillaTextureLoader;
@@ -13,67 +14,83 @@ public class RemapManager
     public static RemapManager Instance => instance.Value;
 
     private const string BASE_URL = "https://git.crafterbot.com/Crafterbot/GorillaTextureLoader/raw/branch/v2/";
+    private Task getRemoteRemapsTask;
 
     private RemapsJson json;
-    public Dictionary<string, int> remaps; // without atlas names, since they aren't needed
+    private Dictionary<string, int> remaps; // without atlas names, since they aren't needed
 
     public RemapManager()
     {
-
     }
 
-    // todo: download remote remaps to allow offline play
+    public void Initialize()
+    {
+        if (remaps is not null || getRemoteRemapsTask is not null) return;
+        Main.Log("Initializing remapsmanager");
+
+        string gameVersion = NetworkSystemConfig.BundleVersion;
+        SetRemapsToLocal();
+        if (json.GameVersion != gameVersion)
+        {
+            Main.Log("Mismatching game versions with local remaps. Trying to use external.", BepInEx.Logging.LogLevel.Warning);
+            Main.Notify("Mod outdated, trying to use remote game data.", isWarning: true); // todo: make nicer sound
+            getRemoteRemapsTask = SetRemapsToRemote().ContinueWith(task =>
+            {
+                Main.Log($"Failed to gte remote remaps " + task.Exception);
+                Main.Notify("Outdated remaps, textures may not work properly. Please check internet connection or update the mod.", isError: true);
+            }, TaskContinuationOptions.OnlyOnFaulted);
+            SetRemapsToLocal();
+        }
+    }
+
+    // todo: download remote remaps to allow offline play even when mod is outdated
     public int RemapTexture(string texture_name)
     {
-        return GetRemaps().Result[texture_name]; // getremaps should be called on game start to avoid blocking
+        return GetRemaps()[texture_name]; // getremaps should be called on game start to avoid blocking
     }
 
-    public async Task<Dictionary<string, Dictionary<string, int>>> GetRemapsWithAtlas()
+    public Dictionary<string, Dictionary<string, int>> GetRemapsWithAtlas()
     {
-        await GetRemaps();
         return json.Remaps;
     }
 
-    public async Task<Dictionary<string, int>> GetRemaps()
+    public Dictionary<string, int> GetRemaps()
     {
-        string gameVersion = GorillaNetworking.GorillaComputer.instance.version;
-        Main.Log($"Game version {gameVersion}", BepInEx.Logging.LogLevel.Debug);
-
         if (remaps is null)
         {
-            using var stream = typeof(RemapManager).Assembly.GetManifestResourceStream("GorillaTextureLoader.Remaps.json");
-            if (stream is not null)
-            {
-                using var reader = new StreamReader(stream);
-                json = JsonConvert.DeserializeObject<RemapsJson>(await reader.ReadToEndAsync());
-                if (json.GameVersion == gameVersion)
-                {
-                    Main.Log("Using local remaps");
-                    remaps = JoinDictionaries([.. json.Remaps.Values]);
-                }
-            }
-            else
-            {
-                Main.Log("Fetching remote remaps");
-                using var client = new HttpClient();
-                var response = await client.GetAsync(BASE_URL + "Remaps.json");
-                if (!response.IsSuccessStatusCode) throw new System.Exception("Failed to get remote remaps. Mod will not work. " + response.StatusCode);
-                json = JsonConvert.DeserializeObject<RemapsJson>(await response.Content.ReadAsStringAsync());
-                remaps = JoinDictionaries([.. json.Remaps.Values]);
-            }
+            Main.Log("Incorrect logic flow. GetRemaps being called before remaps population task finishes " + getRemoteRemapsTask?.Status, BepInEx.Logging.LogLevel.Warning);
+            if (getRemoteRemapsTask is null) Initialize();
+            getRemoteRemapsTask.Wait(); // blocking, but should never occur
         }
-
         return remaps;
     }
 
-    public async Task<string> GetLatestVersion()
+    public string GetLatestVersion()
     {
-        if (string.IsNullOrEmpty(json.GameVersion))
-        {
-            await GetRemaps(); // force populate gamever
-        }
-
+        if (string.IsNullOrEmpty(json.GameVersion)) GetRemaps(); // force populate gamever
         return json.GameVersion;
+    }
+
+    private void SetRemapsToLocal()
+    {
+        using var stream = typeof(RemapManager).Assembly.GetManifestResourceStream("GorillaTextureLoader.Remaps.json");
+        using var reader = new StreamReader(stream);
+        json = JsonConvert.DeserializeObject<RemapsJson>(reader.ReadToEnd());
+        remaps = JoinDictionaries([.. json.Remaps.Values]);
+    }
+
+    private async Task SetRemapsToRemote()
+    {
+        Main.Log("Fetching remote remaps", BepInEx.Logging.LogLevel.Debug);
+        using var client = new HttpClient();
+        var response = await client.GetAsync(BASE_URL + "Remaps.json");
+        string text = await response.Content.ReadAsStringAsync();
+        lock (remaps)
+        {
+            json = JsonConvert.DeserializeObject<RemapsJson>(text);
+            remaps = JoinDictionaries([.. json.Remaps.Values]);
+            Main.Log("Got with version " + json.GameVersion, LogLevel.Message);
+        }
     }
 
     private Dictionary<string, int> JoinDictionaries(Dictionary<string, int>[] dictionaries)

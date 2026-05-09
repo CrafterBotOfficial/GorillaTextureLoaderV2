@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace GorillaTextureLoader;
@@ -12,15 +11,12 @@ public class ExtractTemplate : MonoBehaviour
 
     private void Start()
     {
-        TryExtract().ContinueWith(task =>
-        {
-            Main.Log(task.Exception, BepInEx.Logging.LogLevel.Error);
-        }, TaskContinuationOptions.OnlyOnFaulted);
+        TryExtract();
     }
 
-    private async Task TryExtract()
+    private void TryExtract()
     {
-        string outputDirectory = await GetDirectory();
+        string outputDirectory = GetDirectory();
 
         if (Directory.Exists(outputDirectory)) return;
 
@@ -30,7 +26,7 @@ public class ExtractTemplate : MonoBehaviour
         {
             Directory.CreateDirectory(outputDirectory);
 
-            var remaps = await RemapManager.Instance.GetRemapsWithAtlas();
+            var remaps = RemapManager.Instance.GetRemapsWithAtlas();
             foreach (var atlasMap in remaps)
             {
                 Main.Log($"{atlasMap.Key}", BepInEx.Logging.LogLevel.Message);
@@ -69,9 +65,9 @@ public class ExtractTemplate : MonoBehaviour
         }
     }
 
-    private async Task<string> GetDirectory()
+    private string GetDirectory()
     {
-        string latestVersion = await RemapManager.Instance.GetLatestVersion();
+        string latestVersion = RemapManager.Instance.GetLatestVersion();
         return string.Format(EXTRACT_DIRECTORY, Path.Join(BepInEx.Paths.PluginPath, "GorillaTextureLoader"), latestVersion);
     }
 }
