@@ -19,7 +19,7 @@ public class TextureApplier(TextureCache cache)
             // else 
             (string textureName, var array) = ApplyTo(pair.Key, pair.Value);
             if (Configuration.EnableCaching.Value)
-                cacheBuilder.Add(textureName, array);
+                if (array is not null) cacheBuilder.Add(textureName, array);
         }
         cache.CacheTexturePack(meta, cacheBuilder);
     }
@@ -74,7 +74,7 @@ public class TextureApplier(TextureCache cache)
                 }
                 // base slice
                 // Main.Log("Copying base " + i, BepInEx.Logging.LogLevel.Debug);
-                var renderTexture = RenderTexture.GetTemporary(atlas.width, atlas.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+                var renderTexture = RenderTexture.GetTemporary(atlas.width, atlas.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear); // may leak if exception
                 var sliceTexture = new Texture2D(atlas.width, atlas.height, TextureFormat.BC7, false, true);
                 Graphics.CopyTexture(atlas, i, 0, sliceTexture, 0, 0);
                 Graphics.Blit(sliceTexture, renderTexture);
@@ -104,7 +104,7 @@ public class TextureApplier(TextureCache cache)
         catch (Exception ex)
         {
             Main.Log($"Failed to apply texture {textureName} {ex.Message}", BepInEx.Logging.LogLevel.Error);
-            return default;
+            return (default, null);
         }
     }
 }

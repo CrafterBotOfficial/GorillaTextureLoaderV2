@@ -27,9 +27,8 @@ public class Main : BaseUnityPlugin
         });
 
 #if DEBUG
-        SceneManager.sceneLoaded += async (scene, _) =>
+        SceneManager.sceneLoaded += (scene, _) =>
         {
-            await System.Threading.Tasks.Task.Delay(5000);
             if (scene.name == "GorillaTag")
                 GorillaTagger.OnPlayerSpawned(DumpTextures.DoDump);
         };
