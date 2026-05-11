@@ -13,7 +13,7 @@ public class RemapManager
     private static Lazy<RemapManager> instance = new Lazy<RemapManager>(() => new RemapManager());
     public static RemapManager Instance => instance.Value;
 
-    private const string BASE_URL = "https://git.crafterbot.com/Crafterbot/GorillaTextureLoader/raw/branch/v2/";
+    private static readonly object lockObject = new();
     private Task getRemoteRemapsTask;
 
     private RemapsJson json;
@@ -44,9 +44,14 @@ public class RemapManager
     }
 
     // todo: download remote remaps to allow offline play even when mod is outdated
-    public int RemapTexture(string texture_name)
+    public int RemapTexture(string textureName)
     {
-        return GetRemaps()[texture_name]; // getremaps should be called on game start to avoid blocking
+        if (GetRemaps().TryGetValue(textureName, out int newSliceIndex))
+        {
+            return newSliceIndex;
+        }
+        Main.Log("Improper texturepack", LogLevel.Warning);
+        return -1;
     }
 
     public Dictionary<string, Dictionary<string, int>> GetRemapsWithAtlas()
@@ -83,9 +88,9 @@ public class RemapManager
     {
         Main.Log("Fetching remote remaps", BepInEx.Logging.LogLevel.Debug);
         using var client = new HttpClient();
-        var response = await client.GetAsync(BASE_URL + "Remaps.json");
+        var response = await client.GetAsync(Paths.BASE_URL + "Remaps.json");
         string text = await response.Content.ReadAsStringAsync();
-        lock (remaps)
+        lock (lockObject)
         {
             json = JsonConvert.DeserializeObject<RemapsJson>(text);
             remaps = JoinDictionaries([.. json.Remaps.Values]);

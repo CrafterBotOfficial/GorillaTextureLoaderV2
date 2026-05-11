@@ -76,9 +76,7 @@ public class LoaderV2 : ILoader
             texture.filterMode = FilterMode.Point;
             texture.Apply(false, true);
 
-            // texture.Apply()
             // // todo: add automated resizing of badly made textures
-
             // remap
             string sanitizedName = entry.Name.RemoveStart("slice_").RemoveEnd(".png");
             int sliceIndex = meta.ForceNew ? int.Parse(sanitizedName) : RemapManager.Instance.RemapTexture(sanitizedName);
@@ -104,7 +102,7 @@ public class LoaderV2 : ILoader
             try
             {
                 using var httpClient = new HttpClient();
-                WhitelistedPack = await httpClient.GetStringAsync("https://git.crafterbot.com/Crafterbot/GorillaTextureLoader/raw/branch/v2/verified.csv");
+                WhitelistedPack = await httpClient.GetStringAsync(Paths.BASE_URL + "/verified.csv");
             }
             catch (Exception ex)
             {
