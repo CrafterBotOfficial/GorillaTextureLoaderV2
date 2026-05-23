@@ -30,6 +30,7 @@ public class RemapManager
 
         string gameVersion = NetworkSystemConfig.BundleVersion;
         SetRemapsToLocal();
+        Main.Log($"Local {json.GameVersion} game {gameVersion}");
         if (json.GameVersion != gameVersion)
         {
             Main.Log("Mismatching game versions with local remaps. Trying to use external.", BepInEx.Logging.LogLevel.Warning);
