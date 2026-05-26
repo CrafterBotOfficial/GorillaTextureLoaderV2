@@ -10,9 +10,6 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
-    - name: Clone external repo
-      run: git clone https://git.crafterbot.com/Crafterbot/Jerald ./Jerald
-
     - name: Setup .NET 10
       uses: actions/setup-dotnet@v4
       with:

@@ -21,7 +21,6 @@
 
     <ItemGroup Condition="'$(CI)'=='TRUE'">
         <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" />
-        <ProjectReference Include="./Jerald/Jerald/Jerald.csproj" />
         <PackageReference Publicize="true" Include="gorillatag" Version="*" ExcludeAssets="jerald;jerald.dll"/>
     </ItemGroup>
 

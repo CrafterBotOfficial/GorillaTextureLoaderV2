@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using GorillaTextureLoader.Loader;
 using UnityEngine;
@@ -32,30 +31,18 @@ public class TextureController
         }; // do not load if unable to stop unmodded
 
         PackMetas = LoadAllPackMetasAsync();
-        PackMetas.ContinueWith(_ =>
+        PackMetas.ContinueWith(t =>
         {
-            MainPage.Instance.Initialize(); // ensure page updates when all packs are loaded
-
-            if (GorillaTagger.Instance.offlineVRRig is not null) AutoLoadPack();
-            else GorillaTagger.OnPlayerSpawned(AutoLoadPack);
-        });
+            Main.Log($"Loaded {t.Result.Length} path metas", BepInEx.Logging.LogLevel.Message);
+            MainPage.Instance.Items = [..t.Result];
+        }, TaskContinuationOptions.OnlyOnRanToCompletion);
 
         textureCache = new TextureCache();
     }
 
-    private void AutoLoadPack()
-    {
-        if (PackMetas.Result.FirstOrDefault(x => x.Id == Configuration.CurrentTexturePack.Value) is TexturePackMeta meta && meta.IsVerified)
-        {
-            LoadPack(meta).ContinueWith(task =>
-            {
-                Main.Log(task.Exception, BepInEx.Logging.LogLevel.Error);
-            }, TaskContinuationOptions.OnlyOnFaulted);
-        }
-    }
-
     public async Task LoadPack(TexturePackMeta meta)
     {
+        Main.Log($"Loading pack {meta.Id}");
         UnloadPack();
         if (!meta.IsVerified)
         {
@@ -63,12 +50,13 @@ public class TextureController
             if (!InModdedRoom())
             {
                 Main.Log("Pack not allowed in unmodded rooms", BepInEx.Logging.LogLevel.Warning);
+                Main.Notify($"{meta.Name} not allowed in unmodded rooms", isError: true);
                 return;
             }
         }
 
         Main.Notify("Loading pack...");
-        await Task.Delay(500); // jank
+        await Task.Delay(500); // ensure monkenotificationlib actually displays the notificaiton
 
 #if DEBUG
         var watch = Stopwatch.StartNew();
@@ -107,35 +95,6 @@ public class TextureController
         }
     }
 
-
-    public Texture2DArray CreateTextureArray(Texture2D[] textures)
-    {
-        var slice0 = textures[0];
-        Main.Log($"Creating array with {textures.Length} slices {slice0.width}x{slice0.height} pixels", BepInEx.Logging.LogLevel.Debug);
-        var textureArray = new Texture2DArray(
-            slice0.width,
-            slice0.height,
-            textures.Length,
-            slice0.format,
-            false,
-            false
-        );
-
-        for (int i = 0; i < textures.Length; i++)
-        {
-            if (textures[i].width != slice0.width || textures[i].height != slice0.height)
-            {
-                Main.Log("Invalid textrurepack", BepInEx.Logging.LogLevel.Error);
-                break;
-            }
-            Graphics.CopyTexture(textures[i], 0, 0, textureArray, i, 0);
-        }
-
-        textureArray.filterMode = FilterMode.Point;
-        textureArray.Apply(false, true);
-        return textureArray;
-    }
-
     // Todo: Add legacy loader, if reasonably possible
     public async Task<TexturePackMeta[]> LoadAllPackMetasAsync()
     {
@@ -146,6 +105,7 @@ public class TextureController
     }
 
     // To allow verified packs to work without utilla
+    // and supports both Utilla and GroillaLibaray
     private bool InModdedRoom()
     {
         var networkSystem = NetworkSystem.Instance;
@@ -154,7 +114,6 @@ public class TextureController
 
     public static TextureCache GetTextureCache()
     {
-        if (Instance?.textureCache is null) Main.Log("Texture cache not yet initialized", BepInEx.Logging.LogLevel.Warning); // todo verify not called and delete
-        return Instance?.textureCache ?? new TextureCache();
+        return Instance.textureCache;
     }
 }

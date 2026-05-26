@@ -9,6 +9,7 @@ namespace GorillaTextureLoader;
 [BepInPlugin("crafterbot.dumbmonkegame.textureloader", "TextureLoader", "2.0.0")]
 [BepInDependency("crafterbot.gorillatag.computer", "1.1.0")]
 [BepInDependency("crafterbot.notificationlib", "1.1.0")]
+[BepInDependency("org.legoandmars.gorillatag.utilla", "1.7.0")]
 public class Main : BaseUnityPlugin
 {
     public static Main Instance;
@@ -38,7 +39,7 @@ public class Main : BaseUnityPlugin
 #if DEBUG
     private void OnGUI()
     {
-        if (!TextureController.Instance.PackMetas.IsCompleted) return;
+        if (TextureController.Instance?.PackMetas is null || !TextureController.Instance.PackMetas.IsCompleted) return;
 
         if (GUILayout.Button("Clear Weather"))
         {
