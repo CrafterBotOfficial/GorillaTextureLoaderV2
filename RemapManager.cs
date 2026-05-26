@@ -34,7 +34,7 @@ public class RemapManager
         if (json.GameVersion != gameVersion)
         {
             Main.Log("Mismatching game versions with local remaps. Trying to use external.", BepInEx.Logging.LogLevel.Warning);
-            Main.Notify("Mod outdated, trying to use remote game data.", isWarning: true); // todo: make nicer sound
+            Main.Notify("Trying to use remote remaps", isWarning: true);
             getRemoteRemapsTask = SetRemapsToRemote().ContinueWith(task =>
             {
                 Main.Log($"Failed to gte remote remaps " + task.Exception);

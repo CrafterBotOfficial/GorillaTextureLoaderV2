@@ -13,4 +13,9 @@ public record class TexturePackMeta(
     [JsonIgnore] public string Id = $"{Name}.{Author}";
     [JsonIgnore] public bool IsVerified;
     [JsonIgnore] public string ZipFilePath;
+
+    public override string ToString()
+    {
+        return Name;
+    }
 }
