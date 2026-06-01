@@ -43,7 +43,7 @@ public class MainPage : ListPage<TexturePackMeta>
         builder.AppendLine("]</size>");
 
         builder.Append(GetListText());
-        builder.AppendLine("</color>");
+        builder.AppendLine("</color>\n");
         builder.AppendLine(GetPageCountText());
         return builder.ToString();
     }
