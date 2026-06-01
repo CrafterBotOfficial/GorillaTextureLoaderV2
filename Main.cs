@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using BepInEx;
 using BepInEx.Logging;
 using MonkeNotificationLib;
@@ -28,8 +29,9 @@ public class Main : BaseUnityPlugin
         });
 
 #if DEBUG
-        SceneManager.sceneLoaded += (scene, _) =>
+        SceneManager.sceneLoaded += async (scene, _) =>
         {
+            await Task.Delay(5000);
             if (scene.name == "GorillaTag")
                 GorillaTagger.OnPlayerSpawned(DumpTextures.DoDump);
         };
