@@ -64,8 +64,9 @@ public class LoaderV2 : ILoader
         using var archive = ZipFile.OpenRead(meta.ZipFilePath);
         foreach (var entry in archive.Entries.Where(entry => entry.FullName.EndsWith(".png")))
         {
-            string atlasName = Path.GetDirectoryName(entry.FullName);
-            // Main.Log(entry.FullName + " to " + atlasName);
+            string sanitizedName = entry.Name.RemoveStart("slice_").RemoveEnd(".png");
+            string atlasName = RemapManager.Instance.GetAtlasFromTextureName(sanitizedName);
+
             using var entryStream = entry.Open();
             using var memoryStream = new MemoryStream();
             entryStream.CopyTo(memoryStream);
@@ -78,7 +79,6 @@ public class LoaderV2 : ILoader
 
             // // todo: add automated resizing of badly made textures
             // remap
-            string sanitizedName = entry.Name.RemoveStart("slice_").RemoveEnd(".png");
             int sliceIndex = meta.ForceNew ? int.Parse(sanitizedName) : RemapManager.Instance.RemapTexture(sanitizedName);
             if (!result.ContainsKey(atlasName)) result[atlasName] = [];
             Main.Log($"Mapped {atlasName} {sliceIndex} {texture.name}");

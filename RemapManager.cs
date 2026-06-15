@@ -17,7 +17,7 @@ public class RemapManager
     private Task getRemoteRemapsTask;
 
     private RemapsJson json;
-    private Dictionary<string, int> remaps; // without atlas names, since they aren't needed
+    private Dictionary<string, int> remaps; // without atlas names, since they aren't needed.
 
     public RemapManager()
     {
@@ -71,6 +71,28 @@ public class RemapManager
         return remaps;
     }
 
+    public string GetAtlasFromTextureName(string input) {
+        _ = GetRemaps();
+        foreach(var map in json.Remaps) {
+            foreach (var pair in map.Value) {
+                if (pair.Key == input) {
+                    return map.Key;
+                }
+            }
+        }
+
+        Main.Log("Malformed pack", LogLevel.Warning);
+        return "TexArrayAtlas_256x256_BC7_AllScenes"; // most likely case
+    }
+
+    public bool IsSingle(string input) {
+        return json.Singles.ContainsKey(input);
+    }
+
+    public RemapsJson GetJson() {
+        return json;
+    }
+
     public string GetLatestVersion()
     {
         if (string.IsNullOrEmpty(json.GameVersion)) GetRemaps(); // force populate gamever
@@ -113,5 +135,5 @@ public class RemapManager
         return result;
     }
 
-    private record struct RemapsJson(string GameVersion, Dictionary<string, Dictionary<string, int>> Remaps);
+    public record class RemapsJson(string GameVersion, Dictionary<string, Dictionary<string, int>> Remaps, Dictionary<string, string> Singles);
 }
