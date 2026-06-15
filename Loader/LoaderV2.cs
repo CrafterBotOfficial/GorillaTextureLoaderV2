@@ -57,9 +57,10 @@ public class LoaderV2 : ILoader
         }
     }
 
-    public Dictionary<string, Dictionary<int, Texture2D>> LoadPack(TexturePackMeta meta)
+    public LoadedPack LoadPack(TexturePackMeta meta)
     {
         Main.Log("Attempting to load pack to memory", BepInEx.Logging.LogLevel.Message);
+        var singles = new Dictionary<string, Texture2D>();
         var result = new Dictionary<string, Dictionary<int, Texture2D>>();
         using var archive = ZipFile.OpenRead(meta.ZipFilePath);
         foreach (var entry in archive.Entries.Where(entry => entry.FullName.EndsWith(".png")))
@@ -78,6 +79,12 @@ public class LoaderV2 : ILoader
             texture.Apply(false, true);
 
             // // todo: add automated resizing of badly made textures
+            if (RemapManager.Instance.IsSingle(sanitizedName)) {
+                Main.Log("Single found " + sanitizedName, BepInEx.Logging.LogLevel.Message);
+                singles.Add(sanitizedName, texture);
+                continue;
+            }
+
             // remap
             int sliceIndex = meta.ForceNew ? int.Parse(sanitizedName) : RemapManager.Instance.RemapTexture(sanitizedName);
             if (!result.ContainsKey(atlasName)) result[atlasName] = [];
@@ -85,7 +92,10 @@ public class LoaderV2 : ILoader
             result[atlasName][sliceIndex] = texture;
         }
 
-        return result;
+        return new LoadedPack() with {
+            Remaps = result,
+            Singles = singles,
+        };
     }
 
     private string GetHash(FileStream stream)
@@ -114,3 +124,5 @@ public class LoaderV2 : ILoader
         return WhitelistedPack.Contains(hash);
     }
 }
+
+public record struct LoadedPack(Dictionary<string, Dictionary<int, Texture2D>> Remaps, Dictionary<string, Texture2D> Singles);

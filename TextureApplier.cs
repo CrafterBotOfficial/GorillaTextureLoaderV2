@@ -9,10 +9,10 @@ public class TextureApplier(TextureCache cache)
 {
     private readonly List<Material> processedMaterials = [];
 
-    public void Start(TexturePackMeta meta, Dictionary<string, Dictionary<int, Texture2D>> combined)
+    public void Start(TexturePackMeta meta, Loader.LoadedPack combined)
     {
         var cacheBuilder = new Dictionary<string, Texture2DArray>();
-        foreach (var pair in combined)
+        foreach (var pair in combined.Remaps)
         {
             // force new is for the upscaled textures
             // if (meta.ForceNew) ApplyFrom(pair.Key, TextureController.Instance.CreateTextureArray([.. pair.Value.OrderBy(x => x.Key).Select(x => x.Value)]));
@@ -21,15 +21,39 @@ public class TextureApplier(TextureCache cache)
             if (Configuration.EnableCaching.Value)
                 if (array is not null) cacheBuilder.Add(textureName, array);
         }
-        cache.CacheTexturePack(meta, cacheBuilder);
+
+        ApplySingles(combined.Singles);
+
+        if (Configuration.EnableCaching.Value)
+            cache.CacheTexturePack(meta, cacheBuilder, combined.Singles);
     }
 
     // for cache
-    public void Start(Dictionary<string, Texture2DArray> textures)
+    public void Start(TextureCache.CachedTexturePack cached)
     {
-        foreach (var pair in textures)
+        foreach (var pair in cached.Atlases)
         {
             ApplyFrom(pair.Key, pair.Value);
+        }
+
+        ApplySingles(cached.Singles);
+    }
+
+    private void ApplySingles(Dictionary<string, Texture2D> singles) {
+        foreach (var pair in singles) {
+            string textureName = RemapManager.Instance.GetJson().Singles[pair.Key];
+            var materials = cache.FindMaterialByTextureName(textureName, "_BaseMap");
+            if (materials.Length == 0) {
+                Main.Log($"No materials found for single {pair.Key} mat name: {textureName}", BepInEx.Logging.LogLevel.Warning);
+                continue;
+            }
+
+            cache.CacheGameTextures(textureName, materials.First().GetTexture("_BaseMap") as Texture2D); // grabs random sample
+
+            foreach (var material in materials)
+            {
+                material.SetTexture("_BaseMap", pair.Value);
+            }
         }
     }
 
