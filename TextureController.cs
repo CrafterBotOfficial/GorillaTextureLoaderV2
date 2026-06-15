@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using GorillaTextureLoader.Loader;
@@ -63,7 +62,7 @@ public class TextureController
 #endif
 
         var applier = new TextureApplier(textureCache);
-        if (Configuration.EnableCaching.Value && textureCache.TryGetTexturePack(meta, out Dictionary<string, Texture2DArray> textures))
+        if (Configuration.EnableCaching.Value && textureCache.TryGetTexturePack(meta, out var textures))
         {
             Main.Log("Loading textures from cache");
             applier.Start(textures);
@@ -90,8 +89,13 @@ public class TextureController
         Current = null;
         foreach (var texturePair in textureCache.GetOriginalGameTextures())
         {
-            var materials = textureCache.FindMaterialByTextureName(texturePair.Key);
-            foreach (var material in materials) material.SetTexture("_BaseMap_Atlas", texturePair.Value);
+            bool isAtlas = texturePair.Value is Texture2DArray;
+            string key = isAtlas ? Paths.MAIN_ATLAS_KEY : "_BaseMap";
+            Main.Log($"Trying to revert {texturePair.Value} {isAtlas} {key}");
+            var materials = textureCache.FindMaterialByTextureName(texturePair.Key, key);
+            foreach (var material in materials) {
+                material.SetTexture(key, texturePair.Value);
+            }
         }
     }
 

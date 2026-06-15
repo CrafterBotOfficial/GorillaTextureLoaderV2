@@ -81,7 +81,9 @@ public class RemapManager
             }
         }
 
-        Main.Log("Malformed pack", LogLevel.Warning);
+        if (!json.Singles.ContainsKey(input)) {
+            Main.Log("Malformed pack " + input, LogLevel.Warning);
+        }
         return "TexArrayAtlas_256x256_BC7_AllScenes"; // most likely case
     }
 
