@@ -45,7 +45,8 @@ public class TextureCache
         return [.. FindMaterialByTextureName(name).Select(x => x.GetTexture(Paths.MAIN_ATLAS_KEY))];
     }
 
-    public void CacheGameTextures(string textureName, Texture2D texture) {
+    public void CacheGameTextures(string textureName, Texture2D texture)
+    {
         if (cachedGameTextures.ContainsKey(textureName)) return;
         Main.Log("Saving default textures for single");
         var cache = new Texture2D(texture.width, texture.height, texture.format, 0, false)

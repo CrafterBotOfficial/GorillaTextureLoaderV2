@@ -33,7 +33,7 @@ public class TextureController
         PackMetas.ContinueWith(t =>
         {
             Main.Log($"Loaded {t.Result.Length} path metas", BepInEx.Logging.LogLevel.Message);
-            MainPage.Instance.Items = [..t.Result];
+            MainPage.Instance.Items = [.. t.Result];
         }, TaskContinuationOptions.OnlyOnRanToCompletion);
 
         textureCache = new TextureCache();
@@ -93,7 +93,8 @@ public class TextureController
             string key = isAtlas ? Paths.MAIN_ATLAS_KEY : "_BaseMap";
             Main.Log($"Trying to revert {texturePair.Value} {isAtlas} {key}");
             var materials = textureCache.FindMaterialByTextureName(texturePair.Key, key);
-            foreach (var material in materials) {
+            foreach (var material in materials)
+            {
                 material.SetTexture(key, texturePair.Value);
             }
         }
