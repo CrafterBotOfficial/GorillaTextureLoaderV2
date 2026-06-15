@@ -32,7 +32,7 @@ public class MainPage : ListPage<TexturePackMeta>
         }
         else if (Items.Count == 0) // should never happen
         {
-            Items = [..TextureController.Instance.PackMetas.Result];
+            Items = [.. TextureController.Instance.PackMetas.Result];
         }
 
         var builder = new StringBuilder("<size=110%>GorillaTextureLoader");

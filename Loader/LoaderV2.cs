@@ -79,7 +79,8 @@ public class LoaderV2 : ILoader
             texture.Apply(false, true);
 
             // // todo: add automated resizing of badly made textures
-            if (RemapManager.Instance.IsSingle(sanitizedName)) {
+            if (RemapManager.Instance.IsSingle(sanitizedName))
+            {
                 Main.Log("Single found " + sanitizedName, BepInEx.Logging.LogLevel.Message);
                 singles.Add(sanitizedName, texture);
                 continue;
@@ -92,7 +93,8 @@ public class LoaderV2 : ILoader
             result[atlasName][sliceIndex] = texture;
         }
 
-        return new LoadedPack() with {
+        return new LoadedPack() with
+        {
             Remaps = result,
             Singles = singles,
         };

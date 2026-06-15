@@ -39,11 +39,14 @@ public class TextureApplier(TextureCache cache)
         ApplySingles(cached.Singles);
     }
 
-    private void ApplySingles(Dictionary<string, Texture2D> singles) {
-        foreach (var pair in singles) {
+    private void ApplySingles(Dictionary<string, Texture2D> singles)
+    {
+        foreach (var pair in singles)
+        {
             string textureName = RemapManager.Instance.GetJson().Singles[pair.Key];
             var materials = cache.FindMaterialByTextureName(textureName, "_BaseMap");
-            if (materials.Length == 0) {
+            if (materials.Length == 0)
+            {
                 Main.Log($"No materials found for single {pair.Key} mat name: {textureName}", BepInEx.Logging.LogLevel.Warning);
                 continue;
             }
