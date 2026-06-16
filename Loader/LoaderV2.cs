@@ -20,20 +20,31 @@ public class LoaderV2 : ILoader
 
     public async Task<TexturePackMeta[]> LoadAllMetadatas()
     {
+        try
+        {
+            using var httpClient = new HttpClient();
+            WhitelistedPack = await httpClient.GetStringAsync(Paths.BASE_URL + "/verified.csv");
+        }
+        catch (Exception ex)
+        {
+            Main.Log($"Failed to grab verified list. Exception: {ex}");
+            return [];
+        }
+
         Main.Log("Loading all v2 texture pack's metadata...");
         var files = Directory.EnumerateFiles(
             Paths.TexturePackDirectory,
             Paths.TEXTURE_PACK_FILE_SUFFIX,
             SearchOption.AllDirectories);
-        var tasks = files.Select(LoadMetadata);
+        var tasks = files.Select(path => Task.Run(() => LoadMetadata(path)));
         return await Task.WhenAll(tasks);
     }
 
-    private async Task<TexturePackMeta> LoadMetadata(string file)
+    private TexturePackMeta LoadMetadata(string file)
     {
+        Main.Log("Attempting to open " + file, BepInEx.Logging.LogLevel.Debug);
         try
         {
-            Main.Log("Attempting to open " + file, BepInEx.Logging.LogLevel.Debug);
             using var fileStream = File.Open(file, FileMode.Open);
             string hash = GetHash(fileStream);
             using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
@@ -46,7 +57,7 @@ public class LoaderV2 : ILoader
             var metadata = JsonConvert.DeserializeObject<TexturePackMeta>(raw);
             return metadata with
             {
-                IsVerified = await IsVerified(hash),
+                IsVerified = WhitelistedPack.Contains(hash),
                 ZipFilePath = file,
             };
         }
@@ -105,25 +116,6 @@ public class LoaderV2 : ILoader
         using var hashAlgorithm = SHA256.Create();
         var hashBytes = hashAlgorithm.ComputeHash(stream);
         return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-    }
-
-    private async Task<bool> IsVerified(string hash) // todo: prevent race condition
-    {
-        if (WhitelistedPack is null || WhitelistedPack.Length == 0)
-        {
-            try
-            {
-                using var httpClient = new HttpClient();
-                WhitelistedPack = await httpClient.GetStringAsync(Paths.BASE_URL + "/verified.csv");
-            }
-            catch (Exception ex)
-            {
-                Main.Log($"Failed to grab verified list. Exception: {ex}");
-                return false;
-            }
-        }
-
-        return WhitelistedPack.Contains(hash);
     }
 }
 

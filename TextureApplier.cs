@@ -91,36 +91,12 @@ public class TextureApplier(TextureCache cache)
         try
         {
             var newAtlas = new Texture2DArray(atlas.width, atlas.height, atlas.depth, TextureFormat.DXT5, false, false); // lin true, bc7 compresison TextureFormat.DXT5
-            for (int i = 0; i < atlas.depth; i++)
+            Graphics.CopyTexture(atlas, newAtlas);
+
+            foreach (var pair in combined)
             {
-                if (combined.TryGetValue(i, out var texture))
-                {
-                    Main.Log("Copying modified " + i, BepInEx.Logging.LogLevel.Debug);
-                    Graphics.CopyTexture(texture, 0, 0, newAtlas, i, 0);
-                    continue;
-                }
-                // base slice
-                // Main.Log("Copying base " + i, BepInEx.Logging.LogLevel.Debug);
-                var renderTexture = RenderTexture.GetTemporary(atlas.width, atlas.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear); // may leak if exception
-                var sliceTexture = new Texture2D(atlas.width, atlas.height, TextureFormat.BC7, false, true);
-                Graphics.CopyTexture(atlas, i, 0, sliceTexture, 0, 0);
-                Graphics.Blit(sliceTexture, renderTexture);
-
-                var readback = new Texture2D(atlas.width, atlas.height, TextureFormat.RGBA32, false, true);
-                RenderTexture.active = renderTexture;
-                readback.ReadPixels(new Rect(0, 0, atlas.width, atlas.height), 0, 0);
-                readback.Apply();
-                RenderTexture.ReleaseTemporary(renderTexture);
-                GameObject.Destroy(sliceTexture);
-
-                var dxt5 = new Texture2D(atlas.width, atlas.height, TextureFormat.RGBA32, false, true);
-                Graphics.CopyTexture(readback, dxt5);
-                dxt5.Apply(false);
-                GameObject.Destroy(readback);
-
-                dxt5.Compress(true);
-                Graphics.CopyTexture(dxt5, 0, 0, newAtlas, i, 0);
-                GameObject.Destroy(dxt5);
+                Main.Log("Copying modified " + pair.Key, BepInEx.Logging.LogLevel.Debug);
+                Graphics.CopyTexture(pair.Value, 0, 0, newAtlas, pair.Key, 0);
             }
 
             newAtlas.name = textureName;
