@@ -39,7 +39,7 @@ public class TextureController
         textureCache = new TextureCache();
     }
 
-    public async Task LoadPack(TexturePackMeta meta)
+    public Task<bool> LoadPack(TexturePackMeta meta)
     {
         Main.Log($"Loading pack {meta.Id}");
         UnloadPack();
@@ -49,36 +49,24 @@ public class TextureController
             if (!InModdedRoom())
             {
                 Main.Log("Pack not allowed in unmodded rooms", BepInEx.Logging.LogLevel.Warning);
-                Main.Notify($"{meta.Name} not allowed in unmodded rooms", isError: true);
-                return;
+                return Task.FromResult(false);
             }
         }
-
-        Main.Notify("Loading pack...");
-        await Task.Delay(500); // ensure monkenotificationlib actually displays the notificaiton
 
 #if DEBUG
         var watch = Stopwatch.StartNew();
 #endif
 
         var applier = new TextureApplier(textureCache);
-        if (Configuration.EnableCaching.Value && textureCache.TryGetTexturePack(meta, out var textures))
-        {
-            Main.Log("Loading textures from cache");
-            applier.Start(textures);
-        }
-        else
-        {
-            Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}"); // force new not yet implimented fully
-            applier.Start(meta, loaderV2.LoadPack(meta));
-        }
+        Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}"); // force new not yet implimented fully
+        applier.Start(loaderV2.LoadPack(meta));
 
 #if DEBUG
         watch.Stop();
         Main.Log($"Finished in {watch.Elapsed.Seconds} {watch.Elapsed.Milliseconds}ms");
 #endif
         Current = meta;
-        Main.Notify("Loaded " + Current.Name);
+        return Task.FromResult(true);
     }
 
     public void UnloadPack()
