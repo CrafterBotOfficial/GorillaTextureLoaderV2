@@ -10,7 +10,7 @@ namespace GorillaTextureLoader;
 
 public class RemapManager
 {
-    private static Lazy<RemapManager> instance = new Lazy<RemapManager>(() => new RemapManager());
+    private readonly static Lazy<RemapManager> instance = new Lazy<RemapManager>(() => new RemapManager());
     public static RemapManager Instance => instance.Value;
 
     private static readonly object lockObject = new();
@@ -34,11 +34,9 @@ public class RemapManager
         if (json.GameVersion != gameVersion)
         {
             Main.Log("Mismatching game versions with local remaps. Trying to use external.", BepInEx.Logging.LogLevel.Warning);
-            Main.Notify("Trying to use remote remaps", isWarning: true);
             getRemoteRemapsTask = SetRemapsToRemote().ContinueWith(task =>
             {
                 Main.Log($"Failed to gte remote remaps " + task.Exception);
-                Main.Notify("Outdated remaps, textures may not work properly. Please check internet connection or update the mod.", isError: true);
             }, TaskContinuationOptions.OnlyOnFaulted);
             SetRemapsToLocal();
         }

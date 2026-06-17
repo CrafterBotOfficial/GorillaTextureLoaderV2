@@ -83,11 +83,14 @@ public class LoaderV2 : ILoader
             using var memoryStream = new MemoryStream();
             entryStream.CopyTo(memoryStream);
 
+            // 2048x2048
             var texture = new Texture2D(0, 0);
+            // var texture = new Texture2D(2048, 2048, TextureFormat.BC7, true);
+            // texture.LoadRawTextureData(memoryStream.ToArray());
             texture.LoadImage(memoryStream.ToArray());
-            texture.Compress(false);
+            // texture.Compress(false);
             texture.filterMode = FilterMode.Point;
-            texture.Apply(false, true);
+            texture.Apply(true, false);
 
             // // todo: add automated resizing of badly made textures
             if (RemapManager.Instance.IsSingle(sanitizedName))
