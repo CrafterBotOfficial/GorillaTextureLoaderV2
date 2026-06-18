@@ -9,18 +9,6 @@ public class TextureCache
 {
     private readonly Dictionary<string, Texture> cachedGameTextures = [];
     private readonly Dictionary<string, MeshRenderer[]> cachedMeshRenderers = [];
-    private readonly Dictionary<TexturePackMeta, CachedTexturePack> cachedTexturePacks = [];
-
-    public bool TryGetTexturePack(TexturePackMeta meta, out CachedTexturePack textures)
-    {
-        return cachedTexturePacks.TryGetValue(meta, out textures);
-    }
-
-    public void CacheTexturePack(TexturePackMeta meta, Dictionary<string, Texture2DArray> atlases, Dictionary<string, Texture2D> singles)
-    {
-        if (!Configuration.EnableCaching.Value) return;
-        cachedTexturePacks[meta] = new(atlases, singles);
-    }
 
     public MeshRenderer[] FindRenderersByTextureName(string name, string textureKey)
     {
@@ -81,6 +69,4 @@ public class TextureCache
     {
         return cachedGameTextures; // todo: add validation
     }
-
-    public record class CachedTexturePack(Dictionary<string, Texture2DArray> Atlases, Dictionary<string, Texture2D> Singles);
 }
