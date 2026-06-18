@@ -64,7 +64,8 @@ public class MainPage : ListPage<TexturePackMeta>
                 return;
             }
             var selected = TextureController.Instance.PackMetas.Result[SelectedIndex];
-            loadTextureTask = TextureController.Instance.LoadPack(selected).ContinueWith(task => {
+            loadTextureTask = TextureController.Instance.LoadPack(selected).ContinueWith(task =>
+            {
                 if (task.IsFaulted || !task.Result)
                 {
                     Main.Log("Load pack task fail.", BepInEx.Logging.LogLevel.Error);

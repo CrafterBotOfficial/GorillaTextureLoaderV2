@@ -85,10 +85,7 @@ public class LoaderV2 : ILoader
 
             // 2048x2048
             var texture = new Texture2D(0, 0);
-            // var texture = new Texture2D(2048, 2048, TextureFormat.BC7, true);
-            // texture.LoadRawTextureData(memoryStream.ToArray());
             texture.LoadImage(memoryStream.ToArray());
-            // texture.Compress(false);
             texture.filterMode = FilterMode.Point;
             texture.Apply(true, false);
 
