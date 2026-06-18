@@ -56,13 +56,25 @@ public class TextureApplier(TextureCache cache)
 
         try
         {
-            var newAtlas = new Texture2DArray(atlas.width, atlas.height, atlas.depth, TextureFormat.RGBA32, true, false);
-
-            // foreach (var pair in combined)
-            // {
-            //     var custom = pair.Value;
-            //     custom.Compress(true);
-            // }
+            var newAtlas = new Texture2DArray(atlas.width, atlas.height, atlas.depth, TextureFormat.RGBA32, false, false);
+            var renderTexture = new RenderTexture(atlas.width, atlas.height, 0, format: RenderTextureFormat.ARGB32);
+            for (int i = 0; i < newAtlas.depth; i++)
+            {
+                if (combined.TryGetValue(i, out var custom))
+                {
+                    Graphics.CopyTexture(custom, 0, 0, newAtlas, i, 0);
+                    continue;
+                }
+                Graphics.Blit(atlas, renderTexture, i, 0);
+                var temp = new Texture2D(atlas.width, atlas.height);
+                RenderTexture.active = renderTexture;
+                temp.ReadPixels(new Rect(0, 0, atlas.width, atlas.height), 0, 0);
+                temp.Apply();
+                Graphics.CopyTexture(temp, 0, 0, newAtlas, i, 0);
+                GameObject.Destroy(temp);
+            }
+            RenderTexture.active = null;
+            renderTexture.Release();
 
             newAtlas.filterMode = FilterMode.Point;
             materials.ForEach(mat => mat.SetTexture(Paths.MAIN_ATLAS_KEY, newAtlas));
