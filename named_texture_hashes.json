@@ -1,0 +1,40 @@
+[
+    {
+        "texture_name": "forestatlas",
+        "hash": "7ba4ae815f096cd595d95280d3aed32f6578634c27369fe73b8ef51b3e60061b"
+    },
+    {
+        "texture_name": "stump",
+        "hash": "be12c9f6626baf2e995cbd89183b13eeb9edcf87d18cfeecc284a84f61b01d71"
+    },
+    {
+        "texture_name": "city",
+        "hash": "38773821de9d9d8899e261e747b11f1a7c069108896aed5872cc82d5abb5160c"
+    },
+
+    {
+        "texture_name": "ground",
+        "hash": "58a5637a13cb964a4b8605168f7d9594b333711fe2a69c4f2adf72419b199281"
+    },
+    {
+        "texture_name": "leaf_fall",
+        "hash": "18a5637a13cb964a4b8605168f7d9594b333711fe2a69c4f2adf72419b199281"
+    },
+
+    {
+        "texture_name": "stairs",
+        "hash": "2d49c1233f51649eccf64380a7290b9884a1d2cf812432772712e01a503dd502"
+    },
+    {
+        "texture_name": "slide",
+        "hash": "37fa5c496f4badbc4469e0bd966d32a4dd78903ce509aafed227896330adccbc"
+    },
+    {
+        "texture_name": "boardbackground",
+        "hash": "037963566c4f12d1c135ed62d9055560faf5854f9c6dcbf7c4082e2fd6b9107d"
+    },
+    {
+        "texture_name": "treebark",
+        "hash": "791a2d11fd379da8c56d08ec07e419e5f72c80b9d2d861b3dfae7b59c27d20af"
+    }
+]
