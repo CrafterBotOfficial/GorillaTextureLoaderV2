@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using GorillaNetworking;
@@ -64,14 +63,15 @@ public class MainPage : ListPage<TexturePackMeta>
                 return;
             }
             var selected = TextureController.Instance.PackMetas.Result[SelectedIndex];
-            loadTextureTask = TextureController.Instance.LoadPack(selected).ContinueWith(task =>
-            {
-                if (task.IsFaulted || !task.Result)
+            loadTextureTask = TextureController.Instance.LoadPack(selected)
+                .ContinueWith(task =>
                 {
-                    Main.Log("Load pack task fail.", BepInEx.Logging.LogLevel.Error);
-                    SetText("<color=red>Failed to load texturepack. \nCheck logs for more details.\n" + task.Exception is not null ? $"<size=70%>{task.Exception.Message}</size>" : "no exception detected." + "</color>");
-                }
-            });
+                    if (task.IsFaulted || !task.Result)
+                    {
+                        Main.Log("Load pack task fail.", BepInEx.Logging.LogLevel.Error);
+                        SetText("<color=red>Failed to load texturepack. \nCheck logs for more details.\n" + task.Exception is not null ? $"<size=70%>{task.Exception.Message}</size>" : "no exception detected." + "</color>");
+                    }
+                }, TaskContinuationOptions.ExecuteSynchronously);
             SetText($"<align=center><size=110%><color=green>Loaded custom texturepack!</color></size></align>\n<size=90%>Press any key to continue</size>");
         }
     }

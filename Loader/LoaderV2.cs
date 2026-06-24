@@ -68,7 +68,7 @@ public class LoaderV2 : ILoader
         }
     }
 
-    public LoadedPack LoadPack(TexturePackMeta meta)
+    public async Task<LoadedPack> LoadPack(TexturePackMeta meta)
     {
         Main.Log("Attempting to load pack to memory", BepInEx.Logging.LogLevel.Message);
         var singles = new Dictionary<string, Texture2D>();
@@ -81,7 +81,7 @@ public class LoaderV2 : ILoader
 
             using var entryStream = entry.Open();
             using var memoryStream = new MemoryStream();
-            entryStream.CopyTo(memoryStream);
+            await entryStream.CopyToAsync(memoryStream);
 
             // 2048x2048
             var texture = new Texture2D(0, 0);
