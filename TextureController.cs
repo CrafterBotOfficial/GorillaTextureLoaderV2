@@ -39,7 +39,7 @@ public class TextureController
         textureCache = new TextureCache();
     }
 
-    public Task<bool> LoadPack(TexturePackMeta meta)
+    public async Task<bool> LoadPack(TexturePackMeta meta)
     {
         Main.Log($"Loading pack {meta.Id}");
         UnloadPack();
@@ -49,7 +49,7 @@ public class TextureController
             if (!InModdedRoom())
             {
                 Main.Log("Pack not allowed in unmodded rooms", BepInEx.Logging.LogLevel.Warning);
-                return Task.FromResult(false);
+                return false;
             }
         }
 
@@ -59,14 +59,15 @@ public class TextureController
 
         var applier = new TextureApplier(textureCache);
         Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}"); // force new not yet implimented fully
-        applier.Start(loaderV2.LoadPack(meta));
+        applier.Start(await loaderV2.LoadPack(meta));
 
 #if DEBUG
         watch.Stop();
         Main.Log($"Finished in {watch.Elapsed.Seconds} {watch.Elapsed.Milliseconds}ms");
 #endif
+
         Current = meta;
-        return Task.FromResult(true);
+        return true;
     }
 
     public void UnloadPack()
