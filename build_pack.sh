@@ -32,9 +32,12 @@ cd "$target_folder"
 # todo: add support for press compress bc7 for v3 packs
 for file in $(find ./* -type f -name "*.png")
 do
+    input=mktemp 
+    magick "$file" -flip "$input"
     filename="$(basename "${file%.*}").dds"
     rm "$filename"
-    compressonatorcli -EncodeWith HPC -nomipmap -fd BC7 "$file" "$filename" # no mipmaps since different arrays have different counts (plus future proofing)
+    compressonatorcli -EncodeWith HPC -nomipmap -fd BC7 "$input" "$filename" # no mipmaps since different arrays have different counts (plus future proofing)
+    rm "$input"
     # nvcompress -bc7 "$file" "$filename"
 done
 
