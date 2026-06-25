@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using GorillaTextureLoader.Loader;
 using Newtonsoft.Json;
 
 namespace GorillaTextureLoader;
@@ -7,6 +9,7 @@ public record class TexturePackMeta(
     string Author,
     string PackVersion,
     string CompiledGameVersion,
+    Task<LoadedPack> LoadTask,
     bool ForceNew // todo: rename
 )
 {
