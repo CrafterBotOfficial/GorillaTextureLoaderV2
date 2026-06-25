@@ -30,7 +30,6 @@ public class LoaderV2 : ILoader
         {
             Main.Log($"Failed to grab verified list. Exception: {ex}");
             return [];
-
         }
 
         Main.Log("Loading all v2 texture pack's metadata...");
@@ -104,9 +103,12 @@ public class LoaderV2 : ILoader
                     memoryStream.Position = 4 + sizeof(DDS_HEADER) + 20; // dxt10 has 20 extra bytes in head
                 }
 
+                // https://discord.com/channels/810644499763691540/810644499763691543/1519790396593537156
+                var pixelData = binaryReader.ReadBytes((int)(memoryStream.Length - memoryStream.Position));
+
                 await Awaitable.MainThreadAsync();
                 var texture = new Texture2D(header.dwWidth, header.dwHeight, TextureFormat.BC7, false, false); // height should always euqla with
-                texture.LoadRawTextureData(binaryReader.ReadBytes((int)(memoryStream.Length - memoryStream.Position)));
+                texture.LoadRawTextureData(pixelData);
                 texture.filterMode = FilterMode.Point;
                 texture.Apply(false, true);
                 await Awaitable.BackgroundThreadAsync(); // todo: check if worth it
