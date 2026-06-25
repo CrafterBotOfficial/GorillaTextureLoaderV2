@@ -30,15 +30,19 @@ name=$(echo "$package_json" | jq -r '.Name')
 cd "$target_folder"
 
 # todo: add support for press compress bc7 for v3 packs
-# for file in $(find ./* -type f -name "*.png")
-# do
-#     magick "$file" -define dds:compression=bc7 "$file.dds"
-# done
+for file in $(find ./* -type f -name "*.png")
+do
+    filename="$(basename "${file%.*}").dds"
+    rm "$filename"
+    compressonatorcli -EncodeWith HPC -nomipmap -fd BC7 "$file" "$filename" # no mipmaps since different arrays have different counts (plus future proofing)
+    # nvcompress -bc7 "$file" "$filename"
+done
 
 
 output="../$name.pack"
 rm "$output"
-zip -9 "$output" -r .
+zip -9 "$output" -r . -x "*.png"
+rm *.dds
 cd ..
 echo "Hash: $(sha256sum "$name.pack" | awk '{print $1}')"
 
