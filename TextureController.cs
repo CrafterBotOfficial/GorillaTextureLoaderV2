@@ -58,7 +58,6 @@ public class TextureController
 #endif
 
         var applier = new TextureApplier(textureCache);
-        Main.Log($"Applying texture {(meta.ForceNew ? "New" : "Slice")}"); // force new not yet implimented fully
         applier.Start(await meta.LoadTask);
 
 #if DEBUG
