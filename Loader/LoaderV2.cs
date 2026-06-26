@@ -29,7 +29,7 @@ public class LoaderV2 : ILoader
         catch (Exception ex)
         {
             Main.Log($"Failed to grab verified list. Exception: {ex}");
-            return [];
+            WhitelistedPack = string.Empty;
         }
 
         Main.Log("Loading all v2 texture pack's metadata...");
@@ -75,8 +75,9 @@ public class LoaderV2 : ILoader
         try
         {
             Main.Log("Attempting to load pack to memory", BepInEx.Logging.LogLevel.Message);
+            var temp = new List<TempDDsArrayItem>();
             var singles = new Dictionary<string, Texture2D>();
-            var result = new Dictionary<string, Dictionary<int, Texture2D>>();
+            var remaps = new Dictionary<string, Dictionary<int, Texture2D>>();
             foreach (var entry in archive.Entries.Where(entry => entry.FullName.EndsWith(".dds")))
             {
                 string sanitizedName = entry.Name.RemoveStart("slice_").RemoveEnd(".dds");
@@ -103,30 +104,33 @@ public class LoaderV2 : ILoader
                     memoryStream.Position = 4 + sizeof(DDS_HEADER) + 20; // dxt10 has 20 extra bytes in head
                 }
 
-                // https://discord.com/channels/810644499763691540/810644499763691543/1519790396593537156
                 var pixelData = binaryReader.ReadBytes((int)(memoryStream.Length - memoryStream.Position));
+                temp.Add(new(header, sanitizedName, atlasName, pixelData));
+            }
 
-                await Awaitable.MainThreadAsync();
-                var texture = new Texture2D(header.dwWidth, header.dwHeight, TextureFormat.BC7, false, false); // height should always euqla with
-                texture.LoadRawTextureData(pixelData);
+            await Awaitable.MainThreadAsync();
+            foreach (var dds in temp)
+            {
+                var texture = new Texture2D(dds.Header.dwWidth, dds.Header.dwHeight, TextureFormat.BC7, false, false); // height should always euqla with
+                texture.LoadRawTextureData(dds.Pixels);
                 texture.filterMode = FilterMode.Point;
                 texture.Apply(false, true);
-                await Awaitable.BackgroundThreadAsync(); // todo: check if worth it
 
-                if (RemapManager.Instance.IsSingle(sanitizedName))
+                if (RemapManager.Instance.IsSingle(dds.SanitizedName))
                 {
-                    Main.Log("Single found " + sanitizedName, BepInEx.Logging.LogLevel.Message);
-                    singles.Add(sanitizedName, texture);
+                    Main.Log("Single found " + dds.SanitizedName, BepInEx.Logging.LogLevel.Message);
+                    singles.Add(dds.SanitizedName, texture);
                     continue;
                 }
 
                 // remap
-                int sliceIndex = meta.ForceNew ? int.Parse(sanitizedName) : RemapManager.Instance.RemapTexture(sanitizedName);
-                if (!result.ContainsKey(atlasName)) result[atlasName] = [];
-                Main.Log($"Mapped {atlasName} {sliceIndex} {texture.name}");
-                result[atlasName][sliceIndex] = texture;
+                int sliceIndex = RemapManager.Instance.RemapTexture(dds.SanitizedName);
+                Main.Log($"Mapped {dds.AtlasName} {sliceIndex} {texture.name}", BepInEx.Logging.LogLevel.Debug);
+                if (!remaps.ContainsKey(dds.AtlasName)) remaps[dds.AtlasName] = [];
+                remaps[dds.AtlasName][sliceIndex] = texture;
             }
-            return new LoadedPack(result, singles);
+
+            return new LoadedPack(remaps, singles);
         }
         finally
         {
@@ -144,6 +148,7 @@ public class LoaderV2 : ILoader
 }
 
 public record class LoadedPack(Dictionary<string, Dictionary<int, Texture2D>> Remaps, Dictionary<string, Texture2D> Singles);
+record struct TempDDsArrayItem(DDS_HEADER Header, string SanitizedName, string AtlasName, byte[] Pixels);
 
 // copied from https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header
 

@@ -9,8 +9,7 @@ public record class TexturePackMeta(
     string Author,
     string PackVersion,
     string CompiledGameVersion,
-    Task<LoadedPack> LoadTask,
-    bool ForceNew // todo: rename
+    Task<LoadedPack> LoadTask
 )
 {
     [JsonIgnore] public string Id = $"{Name}.{Author}";

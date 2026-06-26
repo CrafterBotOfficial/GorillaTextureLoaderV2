@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -14,9 +13,6 @@ public class TextureApplier(TextureCache cache)
     {
         foreach (var pair in combined.Remaps)
         {
-            // force new is for the upscaled textures
-            // if (meta.ForceNew) ApplyFrom(pair.Key, TextureController.Instance.CreateTextureArray([.. pair.Value.OrderBy(x => x.Key).Select(x => x.Value)]));
-            // else 
             ApplyTo(pair.Key, pair.Value);
         }
 
