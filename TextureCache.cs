@@ -28,14 +28,20 @@ public class TextureCache
         return materials;
     }
 
-    public Texture[] FindTextureByName(string name)
+    public Texture[] FindTextureByName(string name, string key = Paths.MAIN_ATLAS_KEY)
     {
-        return [.. FindMaterialByTextureName(name).Select(x => x.GetTexture(Paths.MAIN_ATLAS_KEY))];
+        return [.. FindMaterialByTextureName(name, key).Select(x => x.GetTexture(key))];
     }
 
+    // todo: combine with below method
     public void CacheGameTextures(string textureName, Texture2D texture)
     {
-        if (cachedGameTextures.ContainsKey(textureName)) return;
+        if (cachedGameTextures.ContainsKey(textureName) || texture is null)
+        {
+            // Main.Log($"Not allowed. {textureName} {texture}", BepInEx.Logging.LogLevel.Warning);
+            return;
+        }
+
         Main.Log("Saving default textures for single");
         var cache = new Texture2D(texture.width, texture.height, texture.format, 0, false)
         {
@@ -50,19 +56,22 @@ public class TextureCache
 
     public void CacheGameTextures(string textureName, Texture2DArray atlas)
     {
-        if (!cachedGameTextures.ContainsKey(textureName))
+        if (cachedGameTextures.ContainsKey(textureName) || atlas is null)
         {
-            Main.Log("Saving default textures");
-            var cache = new Texture2DArray(atlas.width, atlas.height, atlas.depth, atlas.format, 0, false)
-            {
-                filterMode = atlas.filterMode,
-                anisoLevel = atlas.anisoLevel,
-                wrapMode = atlas.wrapMode,
-            };
-
-            Graphics.CopyTexture(atlas, cache);
-            cachedGameTextures.Add(textureName, cache);
+            // Main.Log($"Not allowed. {textureName} {atlas}", BepInEx.Logging.LogLevel.Warning);
+            return;
         }
+
+        Main.Log("Saving default textures");
+        var cache = new Texture2DArray(atlas.width, atlas.height, atlas.depth, atlas.format, 0, false)
+        {
+            filterMode = atlas.filterMode,
+            anisoLevel = atlas.anisoLevel,
+            wrapMode = atlas.wrapMode,
+        };
+
+        Graphics.CopyTexture(atlas, cache);
+        cachedGameTextures.Add(textureName, cache);
     }
 
     public Dictionary<string, Texture> GetOriginalGameTextures()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BepInEx.Logging;
@@ -53,9 +54,20 @@ public class RemapManager
         return -1;
     }
 
-    public Dictionary<string, Dictionary<string, int>> GetRemapsWithAtlas()
+    /// <summary>
+    /// Mega jank method joins both remaps and singles. 
+    /// Singles are formatted as a dictionary aswell just with only 1 value and a dumby remap.
+    /// </summary>
+    public Dictionary<string, Dictionary<string, int>> GetRemapAndSinglessWithAtlas() // todo: make not jank
     {
-        return json.Remaps;
+        var result = new Dictionary<string, Dictionary<string, int>>(json.Remaps);
+        foreach (var single in json.Singles)
+        {
+            result.Add(single.Key, new Dictionary<string, int>(1){
+                 { single.Value, 1 }
+            });
+        }
+        return result;
     }
 
     public Dictionary<string, int> GetRemaps()
