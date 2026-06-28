@@ -111,23 +111,32 @@ public class LoaderV2 : ILoader
             await Awaitable.MainThreadAsync();
             foreach (var dds in temp)
             {
-                var texture = new Texture2D(dds.Header.dwWidth, dds.Header.dwHeight, TextureFormat.BC7, false, false); // height should always euqla with
-                texture.LoadRawTextureData(dds.Pixels);
-                texture.filterMode = FilterMode.Point;
-                texture.Apply(false, true);
-
-                if (RemapManager.Instance.IsSingle(dds.SanitizedName))
+                try
                 {
-                    Main.Log("Single found " + dds.SanitizedName, BepInEx.Logging.LogLevel.Message);
-                    singles.Add(dds.SanitizedName, texture);
-                    continue;
-                }
+                    Main.Log($"LoaderV2 {dds.Header.dwWidth}  {dds.Header.dwHeight}");
+                    var texture = new Texture2D(dds.Header.dwWidth, dds.Header.dwHeight, TextureFormat.BC7, false, false); // height should always euqla with
+                    texture.LoadRawTextureData(dds.Pixels);
+                    texture.filterMode = FilterMode.Point;
+                    texture.Apply(false, true);
 
-                // remap
-                int sliceIndex = RemapManager.Instance.RemapTexture(dds.SanitizedName);
-                Main.Log($"Mapped {dds.AtlasName} {sliceIndex} {texture.name}", BepInEx.Logging.LogLevel.Debug);
-                if (!remaps.ContainsKey(dds.AtlasName)) remaps[dds.AtlasName] = [];
-                remaps[dds.AtlasName][sliceIndex] = texture;
+                    if (RemapManager.Instance.IsSingle(dds.SanitizedName))
+                    {
+                        Main.Log("Single found " + dds.SanitizedName, BepInEx.Logging.LogLevel.Message);
+                        singles.Add(dds.SanitizedName, texture);
+                        continue;
+                    }
+
+                    // remap
+                    int sliceIndex = RemapManager.Instance.RemapTexture(dds.SanitizedName);
+                    Main.Log($"Mapped {dds.AtlasName} {sliceIndex} {texture.name}", BepInEx.Logging.LogLevel.Debug);
+                    if (!remaps.ContainsKey(dds.AtlasName)) remaps[dds.AtlasName] = [];
+                    remaps[dds.AtlasName][sliceIndex] = texture;
+                }
+                catch (Exception ex)
+                {
+                    Main.Log($"Malformed texture {meta.Name} {dds.SanitizedName}. Please recompile the pack and ensure all textures are multiples of 4", BepInEx.Logging.LogLevel.Warning);
+                    Main.Log(ex, BepInEx.Logging.LogLevel.Error);
+                }
             }
 
             return new LoadedPack(remaps, singles);

@@ -51,16 +51,28 @@ public class TextureApplier(TextureCache cache)
         var atlas = materials.First().GetTexture(Paths.MAIN_ATLAS_KEY) as Texture2DArray;
         cache.CacheGameTextures(textureName, atlas);
 
+        int maxWidth = combined.Max(x => x.Value.width);
+        int maxHeight = combined.Max(x => x.Value.height);
+        bool doResize = maxWidth != atlas.width || maxHeight != atlas.height;
+        if (doResize) Main.Log($"Rescaling all textures to be {maxWidth},{maxHeight}", BepInEx.Logging.LogLevel.Warning);
+
+        var newAtlas = new Texture2DArray(maxWidth, maxHeight, atlas.depth, TextureFormat.BC7, false, false);
+
         try
         {
-            var newAtlas = new Texture2DArray(atlas.width, atlas.height, atlas.depth, TextureFormat.BC7, false, false);
-            for (int i = 0; i < atlas.depth; i++)
-            {
-                if (combined.TryGetValue(i, out var customTexture))
-                    Graphics.CopyTexture(customTexture, 0, 0, newAtlas, i, 0);
-                else
-                    Graphics.CopyTexture(atlas, i, 0, newAtlas, i, 0);
-            }
+            if (doResize)
+                foreach (var pair in combined)
+                {
+                    Graphics.CopyTexture(pair.Value, 0, 0, newAtlas, pair.Key, 0);
+                }
+            else
+                for (int i = 0; i < atlas.depth; i++)
+                {
+                    if (combined.TryGetValue(i, out var customTexture))
+                        Graphics.CopyTexture(customTexture, 0, 0, newAtlas, i, 0);
+                    else
+                        Graphics.CopyTexture(atlas, i, 0, newAtlas, i, 0);
+                }
 
             newAtlas.filterMode = FilterMode.Point;
             materials.ForEach(mat => mat.SetTexture(Paths.MAIN_ATLAS_KEY, newAtlas));
