@@ -69,8 +69,19 @@ public class ExtractTemplate : MonoBehaviour
             readback.ReadPixels(new Rect(0, 0, atlas.width, atlas.height), 0, 0);
             readback.Apply();
 
-            byte[] bytes = readback.EncodeToPNG();
+            var pixels = readback.GetPixels();
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = pixels[i].gamma; // fixes dark textres https://discussions.unity.com/t/exporting-png-from-custom-render-texture-in-hdrp-results-in-darker-image/812166/13
+            }
+
+            var image = new Texture2D(atlas.width, atlas.height, TextureFormat.RGBA32, false);
+            image.SetPixels(pixels);
+            image.Apply();
+
+            byte[] bytes = image.EncodeToPNG();
             File.WriteAllBytes(output, bytes);
+            Destroy(image);
         }
         finally
         {
