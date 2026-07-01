@@ -54,25 +54,45 @@ public class MainPage : ListPage<TexturePackMeta>
             TextureController.Instance.UnloadPack();
             return;
         }
+
         base.OnKeyPress(key);
         if (key == GorillaKeyboardBindings.enter)
         {
             if (loadTextureTask is not null && !loadTextureTask.IsCompleted)
             {
-                Main.Log("Texture is currently loading. Cannot load 2 at once", BepInEx.Logging.LogLevel.Warning);
+                Main.Log("Texture is currently loading. \nPlease wait for the current task to complete.", BepInEx.Logging.LogLevel.Warning);
                 return;
             }
+
             var selected = TextureController.Instance.PackMetas.Result[SelectedIndex];
+            if (selected == TextureController.Instance.Current)
+            {
+                Main.Log("TextureController current is selected", BepInEx.Logging.LogLevel.Warning);
+                SetText("<color=red>You cannot load the same texturepack twice.</color>\nPress any key to continue.");
+                return;
+            }
+
+            SetText("...");
+
             loadTextureTask = TextureController.Instance.LoadPack(selected)
                 .ContinueWith(task =>
                 {
-                    if (task.IsFaulted || !task.Result)
+                    if (task.IsFaulted || task.Exception is not null)
                     {
-                        Main.Log("Load pack task fail.", BepInEx.Logging.LogLevel.Error);
-                        SetText("<color=red>Failed to load texturepack. \nCheck logs for more details.\n" + task.Exception is not null ? $"<size=70%>{task.Exception.Message}</size>" : "no exception detected." + "</color>");
+                        Main.Log($"Load pack task fail. {task.Exception ?? default}", BepInEx.Logging.LogLevel.Error);
+                        var errorMessage = new StringBuilder("<color=red>Failed to load texturepack.</color>\n");
+                        errorMessage.AppendLine(new string('=', PREFERRED_WIDTH));
+
+                        errorMessage.AppendLine(task.Exception is null ? "No exception detected :/" : $"Error: <size=80%><color=red>{task.Exception.Message}</color></size>");
+                        errorMessage.AppendLine(string.Empty);
+                        errorMessage.AppendLine("<size=80%>Check LogOutput.txt for more details.</size>");
+
+                        SetText(errorMessage.ToString());
+                        return;
                     }
+
+                    SetText($"<align=center><size=110%><color=green>Loaded custom texturepack!</color></size></align>\n<size=90%>Press any key to continue</size>");
                 }, TaskContinuationOptions.ExecuteSynchronously);
-            SetText($"<align=center><size=110%><color=green>Loaded custom texturepack!</color></size></align>\n<size=90%>Press any key to continue</size>");
         }
     }
 }

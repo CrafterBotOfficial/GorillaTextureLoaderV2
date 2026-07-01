@@ -1,32 +1,54 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
+using GorillaNetworking;
 using GorillaTextureLoader.Loader;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace GorillaTextureLoader;
 
 // Singleton class to control all texture related operations
 // The actual texture applier is a different thing, although both share a bunch of methods
-public class TextureController
+public class TextureController : MonoBehaviour
 {
-    private static Lazy<TextureController> instance = new Lazy<TextureController>(() => new TextureController());
-    public static TextureController Instance => instance.Value;
+    public static TextureController Instance;
 
     public Task<TexturePackMeta[]> PackMetas;
-    public TexturePackMeta Current;
+    private TexturePackMeta current;
+    public TexturePackMeta Current
+    {
+        get => current;
+        set
+        {
+            current = value;
+            Configuration.CurrentTexturePack.Value = value?.Id ?? string.Empty;
+        }
+    }
 
     private readonly ILoader loaderV2 = new LoaderV2();
     private TexturePackMeta[] metadatas;
 
     private TextureCache textureCache;
 
-    public void Initialize()
+    private void Awake()
     {
-        new GameObject().AddComponent<ExtractTemplate>(); // todo: move
+        if (Instance is not null)
+        {
+            GameObject.Destroy(this);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void Start()
+    {
+        gameObject.AddComponent<ExtractTemplate>();
         NetworkSystem.Instance.OnJoinedRoomEvent += () =>
         {
-            if (!InModdedRoom()) UnloadPack();
+            if (!Current.IsVerified && !InModdedRoom())
+                UnloadPack();
         }; // do not load if unable to stop unmodded
 
         PackMetas = LoadAllPackMetasAsync();
@@ -36,10 +58,11 @@ public class TextureController
             MainPage.Instance.Items = [.. t.Result];
         }, TaskContinuationOptions.OnlyOnRanToCompletion);
 
-        textureCache = new TextureCache();
+        textureCache = new TextureCache(true);
+        AutoLoad();
     }
 
-    public async Task<bool> LoadPack(TexturePackMeta meta)
+    public async Task LoadPack(TexturePackMeta meta)
     {
         Main.Log($"Loading pack {meta.Id}");
         UnloadPack();
@@ -49,7 +72,7 @@ public class TextureController
             if (!InModdedRoom())
             {
                 Main.Log("Pack not allowed in unmodded rooms", BepInEx.Logging.LogLevel.Warning);
-                return false;
+                throw new Exception("Pack not allowed in this room.");
             }
         }
 
@@ -66,7 +89,7 @@ public class TextureController
 #endif
 
         Current = meta;
-        return true;
+        return;
     }
 
     public void UnloadPack()
@@ -78,7 +101,7 @@ public class TextureController
         foreach (var texturePair in textureCache.GetOriginalGameTextures())
         {
             bool isAtlas = texturePair.Value is Texture2DArray;
-            string key = isAtlas ? Paths.MAIN_ATLAS_KEY : "_BaseMap";
+            string key = isAtlas ? Paths.MAIN_ATLAS_KEY : Paths.MAIN_KEY;
             Main.Log($"Trying to revert {texturePair.Value} {isAtlas} {key}");
             var materials = textureCache.FindMaterialByTextureName(texturePair.Key, key);
             foreach (var material in materials)
@@ -87,6 +110,23 @@ public class TextureController
             }
         }
     }
+
+    private async void AutoLoad()
+    {
+        while (!GorillaTagger.Instance || !GorillaTagger.Instance.rigidbody || !GorillaComputer.instance || !GorillaComputer.instance.initialized) // ensure graphics device is initialzied to avoid MORE crashing >:(
+        {
+            await Task.Delay(50);
+        }
+
+        var metas = await PackMetas;
+        if (Configuration.EnableAutoLoad.Value && Configuration.CurrentTexturePack.Value != string.Empty)
+        {
+            Main.Log("Auto loading last saved texturepack");
+            var meta = metas.FirstOrDefault(x => x.Id == Configuration.CurrentTexturePack.Value);
+            if (meta is not null && meta.IsVerified) await LoadPack(meta);
+        }
+    }
+
 
     // Todo: Add legacy loader, if reasonably possible
     public async Task<TexturePackMeta[]> LoadAllPackMetasAsync()
@@ -99,14 +139,11 @@ public class TextureController
 
     // To allow verified packs to work without utilla
     // and supports both Utilla and GroillaLibaray
-    private bool InModdedRoom()
-    {
-        var networkSystem = NetworkSystem.Instance;
-        return !networkSystem.InRoom || networkSystem.GameModeString.StartsWith("MODDED_");
-    }
+    private bool InModdedRoom() =>
+        !NetworkSystem.Instance.InRoom || NetworkSystem.Instance.GameModeString.StartsWith("MODDED_");
 
     public static TextureCache GetTextureCache()
     {
-        return Instance.textureCache;
+        return Instance?.textureCache ?? new TextureCache(false);
     }
 }

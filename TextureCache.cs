@@ -5,7 +5,7 @@ using UnityEngine;
 namespace GorillaTextureLoader;
 
 // Responicble for keeping track of original game textures, and remembering already loaded packs
-public class TextureCache
+public class TextureCache(bool EnableGameCaching)
 {
     private readonly Dictionary<string, Texture> cachedGameTextures = [];
     private readonly Dictionary<string, MeshRenderer[]> cachedMeshRenderers = [];
@@ -36,7 +36,7 @@ public class TextureCache
     // todo: combine with below method
     public void CacheGameTextures(string textureName, Texture2D texture)
     {
-        if (cachedGameTextures.ContainsKey(textureName) || texture is null)
+        if (!EnableGameCaching || cachedGameTextures.ContainsKey(textureName) || texture is null)
         {
             // Main.Log($"Not allowed. {textureName} {texture}", BepInEx.Logging.LogLevel.Warning);
             return;
@@ -56,7 +56,7 @@ public class TextureCache
 
     public void CacheGameTextures(string textureName, Texture2DArray atlas)
     {
-        if (cachedGameTextures.ContainsKey(textureName) || atlas is null)
+        if (!EnableGameCaching || cachedGameTextures.ContainsKey(textureName) || atlas is null)
         {
             // Main.Log($"Not allowed. {textureName} {atlas}", BepInEx.Logging.LogLevel.Warning);
             return;
