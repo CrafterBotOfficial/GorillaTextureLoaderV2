@@ -24,18 +24,18 @@ public class TextureApplier(TextureCache cache)
         foreach (var pair in singles)
         {
             string textureName = RemapManager.Instance.GetJson().Singles[pair.Key];
-            var materials = cache.FindMaterialByTextureName(textureName, "_BaseMap");
+            var materials = cache.FindMaterialByTextureName(textureName, Paths.MAIN_KEY);
             if (materials.Length == 0)
             {
                 Main.Log($"No materials found for single {pair.Key} mat name: {textureName}", BepInEx.Logging.LogLevel.Warning);
                 continue;
             }
 
-            cache.CacheGameTextures(textureName, materials.First().GetTexture("_BaseMap") as Texture2D); // grabs random sample
+            cache.CacheGameTextures(textureName, materials.First().GetTexture(Paths.MAIN_KEY) as Texture2D); // grabs random sample
 
             foreach (var material in materials)
             {
-                material.SetTexture("_BaseMap", pair.Value);
+                material.SetTexture(Paths.MAIN_KEY, pair.Value);
             }
         }
     }

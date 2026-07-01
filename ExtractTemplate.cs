@@ -27,14 +27,14 @@ public class ExtractTemplate : MonoBehaviour
             Directory.CreateDirectory(outputDirectory);
 
             // var cache = TextureController.GetTextureCache();
-            var cache = new TextureCache(); // throw away cache so errors here cant break the rest of the mod
+            var cache = new TextureCache(false); // throw away cache so errors here cant break the rest of the mod
             var remaps = RemapManager.Instance.GetRemapAndSinglessWithAtlas();
             foreach (var atlasMap in remaps)
             {
                 if (cache.FindTextureByName(atlasMap.Key).FirstOrDefault() is not Texture2DArray atlas)
                 {
                     var originalName = atlasMap.Value.First().Key;
-                    var original = cache.FindTextureByName(originalName, "_BaseMap").First() as Texture2D;
+                    var original = cache.FindTextureByName(originalName, Paths.MAIN_KEY).First() as Texture2D;
                     string filename = Path.Combine(outputDirectory, $"{atlasMap.Key}.png");
                     DumpTexture(original, TextureFormat.ARGB32, 0, filename);
                     continue;

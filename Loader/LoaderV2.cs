@@ -113,22 +113,22 @@ public class LoaderV2 : ILoader
             {
                 try
                 {
-                    Main.Log($"LoaderV2 {dds.Header.dwWidth}  {dds.Header.dwHeight}");
-                    var texture = new Texture2D(dds.Header.dwWidth, dds.Header.dwHeight, TextureFormat.BC7, false, false); // height should always euqla with
+                    // Main.Log($"LoaderV2 {dds.Header.dwWidth}  {dds.Header.dwHeight}");
+                    var texture = new Texture2D(dds.Header.dwWidth, dds.Header.dwHeight, TextureFormat.BC7, false, false); // height should always euqla width
                     texture.LoadRawTextureData(dds.Pixels);
                     texture.filterMode = FilterMode.Point;
                     texture.Apply(false, true);
 
                     if (RemapManager.Instance.IsSingle(dds.SanitizedName))
                     {
-                        Main.Log("Single found " + dds.SanitizedName, BepInEx.Logging.LogLevel.Message);
+                        // Main.Log("Single found " + dds.SanitizedName, BepInEx.Logging.LogLevel.Debug);
                         singles.Add(dds.SanitizedName, texture);
                         continue;
                     }
 
                     // remap
                     int sliceIndex = RemapManager.Instance.RemapTexture(dds.SanitizedName);
-                    Main.Log($"Mapped {dds.AtlasName} {sliceIndex} {texture.name}", BepInEx.Logging.LogLevel.Debug);
+                    // Main.Log($"Mapped {dds.AtlasName} {sliceIndex} {texture.name}", BepInEx.Logging.LogLevel.Debug);
                     if (!remaps.ContainsKey(dds.AtlasName)) remaps[dds.AtlasName] = [];
                     remaps[dds.AtlasName][sliceIndex] = texture;
                 }

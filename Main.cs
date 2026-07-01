@@ -1,8 +1,6 @@
-using System.Threading.Tasks;
 using BepInEx;
 using BepInEx.Logging;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace GorillaTextureLoader;
 
@@ -15,20 +13,12 @@ public class Main : BaseUnityPlugin
     private void Awake()
     {
         Instance = this;
+        Configuration.Initialize(Config);
         GorillaTagger.OnPlayerSpawned(() =>
         {
-            TextureController.Instance.Initialize();
+            new GameObject("TextureLoader", typeof(TextureController));
             RemapManager.Instance.Initialize();
         });
-
-#if DEBUG
-        SceneManager.sceneLoaded += async (scene, _) =>
-        {
-            await Task.Delay(5000);
-            if (scene.name == "GorillaTag")
-                GorillaTagger.OnPlayerSpawned(DumpTextures.DoDump);
-        };
-#endif
     }
 
 #if DEBUG
