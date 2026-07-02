@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using GorillaNetworking;
 using GorillaTextureLoader.Loader;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace GorillaTextureLoader;
 
@@ -54,7 +53,7 @@ public class TextureController : MonoBehaviour
         PackMetas = LoadAllPackMetasAsync();
         PackMetas.ContinueWith(t =>
         {
-            Main.Log($"Loaded {t.Result.Length} path metas", BepInEx.Logging.LogLevel.Message);
+            Main.Log($"Loaded {t.Result.Length} pack metas", BepInEx.Logging.LogLevel.Message);
             MainPage.Instance.Items = [.. t.Result];
         }, TaskContinuationOptions.OnlyOnRanToCompletion);
 

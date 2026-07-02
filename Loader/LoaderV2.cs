@@ -44,30 +44,23 @@ public class LoaderV2 : ILoader
     private TexturePackMeta LoadMetadata(string file)
     {
         Main.Log("Attempting to open " + file, BepInEx.Logging.LogLevel.Debug);
-        try
-        {
-            var fileStream = File.Open(file, FileMode.Open);
-            string hash = GetHash(fileStream);
-            var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
-            var entry = zipArchive.GetEntry("package.json") ?? throw new Exception("No metadata found!");
 
-            using var entryStream = entry.Open();
-            using var streamReader = new StreamReader(entryStream);
-            string raw = streamReader.ReadToEnd();
+        var fileStream = File.Open(file, FileMode.Open);
+        string hash = GetHash(fileStream);
+        var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
+        var entry = zipArchive.GetEntry("package.json") ?? throw new Exception("No metadata found!");
 
-            var metadata = JsonConvert.DeserializeObject<TexturePackMeta>(raw);
-            metadata.ZipFilePath = file;
-            return metadata with
-            {
-                IsVerified = WhitelistedPack.Contains(hash),
-                LoadTask = LoadPack(metadata, fileStream, zipArchive),
-            };
-        }
-        catch (Exception ex)
+        using var entryStream = entry.Open();
+        using var streamReader = new StreamReader(entryStream);
+        string raw = streamReader.ReadToEnd();
+
+        var metadata = JsonConvert.DeserializeObject<TexturePackMeta>(raw);
+        metadata.ZipFilePath = file;
+        return metadata with
         {
-            Main.Log($"Failed to read {file} {ex.Message} {ex.StackTrace}", BepInEx.Logging.LogLevel.Warning);
-            return null;
-        }
+            IsVerified = WhitelistedPack.Contains(hash),
+            LoadTask = LoadPack(metadata, fileStream, zipArchive),
+        };
     }
 
     public async Task<LoadedPack> LoadPack(TexturePackMeta meta, FileStream fileStream, ZipArchive archive)
