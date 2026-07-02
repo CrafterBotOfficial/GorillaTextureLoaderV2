@@ -29,9 +29,14 @@ public class MainPage : ListPage<TexturePackMeta>
         {
             return "Texturepacks are loading...";
         }
-        else if (Items.Count == 0) // should never happen
+        else if (metas.IsFaulted)
         {
-            Items = [.. TextureController.Instance.PackMetas.Result];
+            Main.Log("Metas IS faileted", BepInEx.Logging.LogLevel.Fatal);
+            return $"Failed to load texturepacks. \nMake sure the mod is correctly installed.\n\n<size=40%><color=red>{metas.Exception.Message}</color></size>";
+        }
+        else if (Items?.Count == 0)
+        {
+            return "No texturepacks found! Make sure you correctly installed the mod.";
         }
 
         var builder = new StringBuilder("<size=110%>GorillaTextureLoader");
