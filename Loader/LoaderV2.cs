@@ -37,34 +37,45 @@ public class LoaderV2 : ILoader
             Paths.TexturePackDirectory,
             Paths.TEXTURE_PACK_FILE_SUFFIX,
             SearchOption.AllDirectories);
-        var tasks = files.Select(path => Task.Run(() => LoadMetadata(path)));
+        var tasks = files.Select(LoadMetadata);
         return await Task.WhenAll(tasks);
     }
 
-    private TexturePackMeta LoadMetadata(string file)
+    private async Task<TexturePackMeta> LoadMetadata(string file)
     {
         Main.Log("Attempting to open " + file, BepInEx.Logging.LogLevel.Debug);
 
-        var fileStream = File.Open(file, FileMode.Open);
-        string hash = GetHash(fileStream);
-        var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
-        var entry = zipArchive.GetEntry("package.json") ?? throw new Exception("No metadata found!");
-
-        using var entryStream = entry.Open();
-        using var streamReader = new StreamReader(entryStream);
-        string raw = streamReader.ReadToEnd();
-
-        var metadata = JsonConvert.DeserializeObject<TexturePackMeta>(raw);
-        metadata.ZipFilePath = file;
-        var result = metadata with
+        try
         {
-            IsVerified = WhitelistedPack.Contains(hash),
-            LoadTask = new(() => LoadPack(metadata, fileStream, zipArchive)),
-        };
+            var fileStream = File.OpenRead(file);
+            string hash = GetHash(fileStream);
+            var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
+            var entry = zipArchive.GetEntry("package.json") ?? throw new Exception("No metadata found!");
 
-        if (Configuration.EnableBackgroundTextureLoading.Value)
-            _ = result.LoadTask.Value; // todo: check what happens if exception
-        return result;
+            using var entryStream = entry.Open();
+            using var streamReader = new StreamReader(entryStream);
+            string raw = await streamReader.ReadToEndAsync();
+
+            var metadata = JsonConvert.DeserializeObject<TexturePackMeta>(raw);
+            metadata.ZipFilePath = file;
+            var result = metadata with
+            {
+                IsVerified = WhitelistedPack.Contains(hash),
+                LoadTask = new Lazy<Task<LoadedPack>>(() => LoadPack(metadata, fileStream, zipArchive)),
+            };
+
+            if (Configuration.EnableBackgroundTextureLoading.Value)
+                _ = result.LoadTask.Value;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Main.Log($"Failed to load metadata {file} {ex}");
+            return new TexturePackMeta(Path.GetFileNameWithoutExtension(file), "", "", "", null) with
+            {
+                ErrorMessage = ex.Message,
+            };
+        }
     }
 
     public async Task<LoadedPack> LoadPack(TexturePackMeta meta, FileStream fileStream, ZipArchive archive)
@@ -88,7 +99,6 @@ public class LoaderV2 : ILoader
                 // binaryReader.ReadBytes(4); // magic
                 memoryStream.Position = 4;
 
-                // https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header
                 DDS_HEADER header;
                 unsafe
                 {

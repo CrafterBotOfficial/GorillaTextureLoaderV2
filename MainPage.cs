@@ -32,7 +32,7 @@ public class MainPage : ListPage<TexturePackMeta>
         else if (metas.IsFaulted)
         {
             Main.Log("Metas IS faileted", BepInEx.Logging.LogLevel.Fatal);
-            return $"Failed to load texturepacks. \nMake sure the mod is correctly installed.\n\n<size=40%><color=red>{metas.Exception.Message}</color></size>";
+            return $"Failed to load texturepacks. \nMake sure the mod is correctly installed.\n\n<size=65%><color=red>{metas.Exception.Message}</color></size>";
         }
         else if (Items?.Count == 0)
         {

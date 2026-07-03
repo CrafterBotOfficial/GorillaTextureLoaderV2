@@ -17,7 +17,7 @@ public class TextureCache(bool EnableGameCaching)
 
         var result = new List<MeshRenderer>();
         var propertyId = Shader.PropertyToID(textureKey);
-        foreach (var meshRenderer in GameObject.FindObjectsByType<MeshRenderer>(sortMode: FindObjectsSortMode.None)) 
+        foreach (var meshRenderer in GameObject.FindObjectsByType<MeshRenderer>(sortMode: FindObjectsSortMode.None))
         {
             if (meshRenderer.sharedMaterial is null || !meshRenderer.sharedMaterial.HasProperty(propertyId)) continue;
 
