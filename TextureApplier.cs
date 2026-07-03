@@ -43,19 +43,30 @@ public class TextureApplier(TextureCache cache)
 
     private void ApplyTo(string textureName, Dictionary<int, Texture2D> combined)
     {
+        var proopertyId = Shader.PropertyToID(Paths.MAIN_ATLAS_KEY);
         var materials = cache.FindMaterialByTextureName(textureName)
-            .Where(mat => !processedMaterials.Contains(mat))
+            .Where(mat => !processedMaterials.Contains(mat) && mat.HasProperty(proopertyId))
             .ToArray();
         if (materials.Length == 0) return;
         processedMaterials.AddRange(materials);
 
-        var atlas = materials.First().GetTexture(Paths.MAIN_ATLAS_KEY) as Texture2DArray;
+        Texture2DArray atlas = null;
+        materials.First(x => // fixes randomly not loading on startup
+        {
+            if (x.GetTexture(Paths.MAIN_ATLAS_KEY) is Texture2DArray texture2DArray)
+            {
+                atlas = texture2DArray;
+                return true;
+            }
+            return false;
+        });
+
         cache.CacheGameTextures(textureName, atlas);
 
         int maxWidth = combined.Max(x => x.Value.width);
         int maxHeight = combined.Max(x => x.Value.height);
         bool doResize = maxWidth != atlas.width || maxHeight != atlas.height;
-        if (doResize) Main.Log($"Rescaling all textures to be {maxWidth},{maxHeight}", BepInEx.Logging.LogLevel.Warning);
+        if (doResize) Main.Log($"Using resolution {maxWidth},{maxHeight}", BepInEx.Logging.LogLevel.Warning);
 
         var newAtlas = new Texture2DArray(maxWidth, maxHeight, atlas.depth, TextureFormat.BC7, false, false);
         TexturepackAtlases.Add(newAtlas);
