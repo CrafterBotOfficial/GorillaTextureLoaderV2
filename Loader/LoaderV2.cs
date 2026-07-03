@@ -135,7 +135,6 @@ public class LoaderV2 : ILoader
 
                     // remap
                     int sliceIndex = RemapManager.Instance.RemapTexture(dds.SanitizedName);
-                    // Main.Log($"Mapped {dds.AtlasName} {sliceIndex} {texture.name}", BepInEx.Logging.LogLevel.Debug);
                     if (!remaps.ContainsKey(dds.AtlasName)) remaps[dds.AtlasName] = [];
                     remaps[dds.AtlasName][sliceIndex] = texture;
                 }

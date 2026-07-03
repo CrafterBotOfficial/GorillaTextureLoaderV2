@@ -27,6 +27,7 @@ public class TextureCache(bool EnableGameCaching)
             result.Add(meshRenderer);
         }
 
+        Main.Log($"Caching {result.Count} items", BepInEx.Logging.LogLevel.Debug);
         var array = result.ToArray();
         cachedMeshRenderers.Add(name, array);
 

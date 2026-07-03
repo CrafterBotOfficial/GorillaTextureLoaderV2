@@ -25,6 +25,7 @@ public class TextureController : MonoBehaviour
             Configuration.CurrentTexturePack.Value = value?.Id ?? string.Empty;
         }
     }
+    private TextureApplier applier;
 
     private readonly ILoader loaderV2 = new LoaderV2();
     private TexturePackMeta[] metadatas;
@@ -67,7 +68,7 @@ public class TextureController : MonoBehaviour
         UnloadPack();
         if (!meta.IsVerified)
         {
-            Main.Log("Pack univerified");
+            Main.Log("Pack unverified");
             if (!InModdedRoom())
             {
                 Main.Log("Pack not allowed in unmodded rooms", BepInEx.Logging.LogLevel.Warning);
@@ -79,7 +80,7 @@ public class TextureController : MonoBehaviour
         var watch = Stopwatch.StartNew();
 #endif
 
-        var applier = new TextureApplier(textureCache);
+        applier = new TextureApplier(textureCache);
         applier.Start(await meta.LoadTask.Value);
 
 #if DEBUG
@@ -108,6 +109,13 @@ public class TextureController : MonoBehaviour
                 material.SetTexture(key, texturePair.Value);
             }
         }
+
+        foreach (var atlas in applier.TexturepackAtlases)
+        {
+            GameObject.Destroy(atlas);
+        }
+        applier.TexturepackAtlases.Clear();
+        applier = null;
     }
 
     private async void AutoLoad()
