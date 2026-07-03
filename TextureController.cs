@@ -80,7 +80,7 @@ public class TextureController : MonoBehaviour
 #endif
 
         var applier = new TextureApplier(textureCache);
-        applier.Start(await meta.LoadTask);
+        applier.Start(await meta.LoadTask.Value);
 
 #if DEBUG
         watch.Stop();

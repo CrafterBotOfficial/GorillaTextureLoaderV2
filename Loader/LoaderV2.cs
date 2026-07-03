@@ -56,11 +56,15 @@ public class LoaderV2 : ILoader
 
         var metadata = JsonConvert.DeserializeObject<TexturePackMeta>(raw);
         metadata.ZipFilePath = file;
-        return metadata with
+        var result = metadata with
         {
             IsVerified = WhitelistedPack.Contains(hash),
-            LoadTask = LoadPack(metadata, fileStream, zipArchive),
+            LoadTask = new(() => LoadPack(metadata, fileStream, zipArchive)),
         };
+
+        if (Configuration.EnableBackgroundTextureLoading.Value)
+            _ = result.LoadTask.Value; // todo: check what happens if exception
+        return result;
     }
 
     public async Task<LoadedPack> LoadPack(TexturePackMeta meta, FileStream fileStream, ZipArchive archive)
