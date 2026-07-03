@@ -17,8 +17,12 @@ public record class TexturePackMeta(
     [JsonIgnore] public bool IsVerified;
     [JsonIgnore] public string ZipFilePath;
 
+    [JsonIgnore] public string ErrorMessage;
+
     public override string ToString()
     {
+        if (!ErrorMessage.IsNullOrEmpty())
+            return $"{Name} <color=red>Error: <size=65%>{ErrorMessage}</size></color>";
         return Name;
     }
 }
