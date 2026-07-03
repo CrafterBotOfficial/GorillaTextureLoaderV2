@@ -9,7 +9,8 @@
 
         "TexArrayAtlas_256x256_BC7_AllScenes": {
             "ground": 998,
-            "leaf_fall":  983,
+            "leaf_fall": 993,
+            "leaf_spring": 992,
             "stairs": 997,
             "slide": 984,
             "boardbackground": 1099,

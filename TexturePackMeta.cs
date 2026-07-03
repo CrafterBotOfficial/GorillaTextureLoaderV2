@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using GorillaTextureLoader.Loader;
 using Newtonsoft.Json;
@@ -9,7 +10,7 @@ public record class TexturePackMeta(
     string Author,
     string PackVersion,
     string CompiledGameVersion,
-    Task<LoadedPack> LoadTask
+    Lazy<Task<LoadedPack>> LoadTask
 )
 {
     [JsonIgnore] public string Id = $"{Name}.{Author}";
