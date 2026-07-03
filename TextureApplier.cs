@@ -7,6 +7,7 @@ namespace GorillaTextureLoader;
 
 public class TextureApplier(TextureCache cache)
 {
+    public List<Texture> TexturepackAtlases = [];
     private readonly List<Material> processedMaterials = [];
 
     public void Start(Loader.LoadedPack combined)
@@ -57,6 +58,7 @@ public class TextureApplier(TextureCache cache)
         if (doResize) Main.Log($"Rescaling all textures to be {maxWidth},{maxHeight}", BepInEx.Logging.LogLevel.Warning);
 
         var newAtlas = new Texture2DArray(maxWidth, maxHeight, atlas.depth, TextureFormat.BC7, false, false);
+        TexturepackAtlases.Add(newAtlas);
 
         try
         {
@@ -80,6 +82,15 @@ public class TextureApplier(TextureCache cache)
         catch (Exception ex)
         {
             Main.Log($"Failed to apply texture {textureName} {ex.Message}", BepInEx.Logging.LogLevel.Error);
+        }
+    }
+
+    // last resort
+    ~TextureApplier()
+    {
+        foreach (var atlas in TexturepackAtlases)
+        {
+            GameObject.Destroy(atlas);
         }
     }
 }
