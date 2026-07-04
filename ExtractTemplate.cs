@@ -18,7 +18,14 @@ public class ExtractTemplate : MonoBehaviour
     {
         string outputDirectory = GetDirectory();
 
-        if (Directory.Exists(outputDirectory)) return;
+        if (Directory.Exists(outputDirectory))
+        {
+#if DEBUG
+            Directory.Delete(outputDirectory, true);
+#else
+            return;
+#endif
+        }
 
         Main.Log("Extracting template files");
 
@@ -31,10 +38,11 @@ public class ExtractTemplate : MonoBehaviour
             var remaps = RemapManager.Instance.GetRemapAndSinglessWithAtlas();
             foreach (var atlasMap in remaps)
             {
-                if (cache.FindTextureByName(atlasMap.Key).FirstOrDefault() is not Texture2DArray atlas)
+                // todo: only search once
+                if (cache.FindTexturesByName(atlasMap.Key).FirstOrDefault() is not Texture2DArray atlas)
                 {
                     var originalName = atlasMap.Value.First().Key;
-                    var original = cache.FindTextureByName(originalName, Paths.MAIN_KEY).First() as Texture2D;
+                    var original = cache.FindTexturesByName(originalName, Paths.MAIN_KEY).First() as Texture2D;
                     string filename = Path.Combine(outputDirectory, $"{atlasMap.Key}.png");
                     DumpTexture(original, TextureFormat.ARGB32, 0, filename);
                     continue;
@@ -57,6 +65,12 @@ public class ExtractTemplate : MonoBehaviour
 
     private void DumpTexture(Texture atlas, TextureFormat format, int index, string output)
     {
+        if (atlas is null)
+        {
+            Main.Log($"Undefined atlas for {index}:{output}", BepInEx.Logging.LogLevel.Error);
+            return;
+        }
+
         var renderTexture = RenderTexture.GetTemporary(atlas.width, atlas.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
         var readback = new Texture2D(atlas.width, atlas.height, TextureFormat.RGBA32, false, true);
         var temp = new Texture2D(atlas.width, atlas.height, format, 0, false);
