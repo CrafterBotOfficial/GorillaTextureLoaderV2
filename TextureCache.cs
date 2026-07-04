@@ -22,7 +22,7 @@ public class TextureCache(bool EnableGameCaching)
             if (meshRenderer.sharedMaterial is null || !meshRenderer.sharedMaterial.HasProperty(propertyId)) continue;
 
             var texture = meshRenderer.sharedMaterial.GetTexture(propertyId);
-            if (texture is not null && texture.name != name) continue;
+            if (texture is null || texture.name != name) continue;
 
             result.Add(meshRenderer);
         }
@@ -40,7 +40,7 @@ public class TextureCache(bool EnableGameCaching)
         return materials;
     }
 
-    public Texture[] FindTextureByName(string name, string key = Paths.MAIN_ATLAS_KEY)
+    public Texture[] FindTexturesByName(string name, string key = Paths.MAIN_ATLAS_KEY)
     {
         return [.. FindMaterialByTextureName(name, key).Select(x => x.GetTexture(key))];
     }
