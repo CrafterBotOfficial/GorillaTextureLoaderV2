@@ -102,8 +102,10 @@ public class TextureController : MonoBehaviour
         {
             bool isAtlas = texturePair.Value is Texture2DArray;
             string key = isAtlas ? Paths.MAIN_ATLAS_KEY : Paths.MAIN_KEY;
-            Main.Log($"Trying to revert {texturePair.Value} {isAtlas} {key}");
-            var materials = textureCache.FindMaterialByTextureName(texturePair.Key, key);
+            Main.Log($"Trying to revert {texturePair.Value} {isAtlas} {key}", BepInEx.Logging.LogLevel.Debug);
+            var materials = isAtlas
+                ? textureCache.FindMaterialsByTextureName<Texture2DArray>(texturePair.Key, key)
+                : textureCache.FindMaterialsByTextureName<Texture2D>(texturePair.Key, key);
             foreach (var material in materials)
             {
                 material.SetTexture(key, texturePair.Value);
