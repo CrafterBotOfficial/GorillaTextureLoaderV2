@@ -25,7 +25,7 @@ public class TextureApplier(TextureCache cache)
         foreach (var pair in singles)
         {
             string textureName = RemapManager.Instance.GetJson().Singles[pair.Key];
-            var materials = cache.FindMaterialByTextureName(textureName, Paths.MAIN_KEY);
+            var materials = cache.FindMaterialsByTextureName<Texture2D>(textureName, Paths.MAIN_KEY);
             if (materials.Length == 0)
             {
                 Main.Log($"No materials found for single {pair.Key} mat name: {textureName}", BepInEx.Logging.LogLevel.Warning);
@@ -43,24 +43,13 @@ public class TextureApplier(TextureCache cache)
 
     private void ApplyTo(string textureName, Dictionary<int, Texture2D> combined)
     {
-        var proopertyId = Shader.PropertyToID(Paths.MAIN_ATLAS_KEY);
-        var materials = cache.FindMaterialByTextureName(textureName)
-            .Where(mat => !processedMaterials.Contains(mat) && mat.HasProperty(proopertyId))
+        var materials = cache.FindMaterialsByTextureName<Texture2DArray>(textureName)
+            .Where(mat => !processedMaterials.Contains(mat))
             .ToArray();
         if (materials.Length == 0) return;
         processedMaterials.AddRange(materials);
 
-        Texture2DArray atlas = null;
-        materials.First(x => // fixes randomly not loading on startup
-        {
-            if (x.GetTexture(Paths.MAIN_ATLAS_KEY) is Texture2DArray texture2DArray)
-            {
-                atlas = texture2DArray;
-                return true;
-            }
-            return false;
-        });
-
+        var atlas = materials.First().GetTexture(Paths.MAIN_ATLAS_KEY) as Texture2DArray;
         cache.CacheGameTextures(textureName, atlas);
 
         int maxWidth = combined.Max(x => x.Value.width);
@@ -81,18 +70,16 @@ public class TextureApplier(TextureCache cache)
             else
                 for (int i = 0; i < atlas.depth; i++)
                 {
-                    if (combined.TryGetValue(i, out var customTexture))
-                        Graphics.CopyTexture(customTexture, 0, 0, newAtlas, i, 0);
-                    else
-                        Graphics.CopyTexture(atlas, i, 0, newAtlas, i, 0);
+                    if (combined.TryGetValue(i, out var customTexture)) Graphics.CopyTexture(customTexture, 0, 0, newAtlas, i, 0);
+                    else Graphics.CopyTexture(atlas, i, 0, newAtlas, i, 0);
                 }
 
             newAtlas.filterMode = FilterMode.Point;
-            materials.ForEach(mat => mat.SetTexture(Paths.MAIN_ATLAS_KEY, newAtlas));
+            materials.ForEach(mat => mat?.SetTexture(Paths.MAIN_ATLAS_KEY, newAtlas));
         }
         catch (Exception ex)
         {
-            Main.Log($"Failed to apply texture {textureName} {ex.Message}", BepInEx.Logging.LogLevel.Error);
+            Main.Log($"Failed to apply texture {textureName} {ex}", BepInEx.Logging.LogLevel.Error);
         }
     }
 

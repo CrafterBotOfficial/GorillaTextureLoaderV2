@@ -8,14 +8,15 @@ namespace GorillaTextureLoader;
 public class TextureCache(bool EnableGameCaching)
 {
     private readonly Dictionary<string, Texture> cachedGameTextures = [];
-    private readonly Dictionary<string, MeshRenderer[]> cachedMeshRenderers = [];
+    private readonly Dictionary<string, Material[]> cachedMaterials = [];
 
-    public MeshRenderer[] FindRenderersByTextureName(string name, string textureKey)
+    /// <summary> Some materials may be null</summary>
+    public Material[] FindMaterialsByTextureName<T>(string name, string textureKey = Paths.MAIN_ATLAS_KEY) where T : Texture
     {
-        if (cachedMeshRenderers.TryGetValue(name, out var cachedRenderers))
-            return cachedRenderers;
+        if (cachedMaterials.TryGetValue(name, out var cache))
+            return cache;
 
-        var result = new List<MeshRenderer>();
+        var sharedMaterials = new List<Material>();
         var propertyId = Shader.PropertyToID(textureKey);
         foreach (var meshRenderer in GameObject.FindObjectsByType<MeshRenderer>(sortMode: FindObjectsSortMode.None))
         {
@@ -23,26 +24,22 @@ public class TextureCache(bool EnableGameCaching)
 
             var texture = meshRenderer.sharedMaterial.GetTexture(propertyId);
             if (texture is null || texture.name != name) continue;
+            if (texture.GetType() != typeof(T)) continue;
 
-            result.Add(meshRenderer);
+            if (sharedMaterials.Contains(meshRenderer.sharedMaterial)) continue;
+            sharedMaterials.Add(meshRenderer.sharedMaterial);
         }
 
-        Main.Log($"Caching {result.Count} items", BepInEx.Logging.LogLevel.Debug);
-        var array = result.ToArray();
-        cachedMeshRenderers.Add(name, array);
+        Main.Log($"Caching {sharedMaterials.Count} items", BepInEx.Logging.LogLevel.Debug);
+        var array = sharedMaterials.ToArray();
+        cachedMaterials.Add(name, array);
 
         return array;
     }
 
-    public Material[] FindMaterialByTextureName(string name, string textureKey = Paths.MAIN_ATLAS_KEY)
+    public T[] FindTexturesByName<T>(string name, string key = Paths.MAIN_ATLAS_KEY) where T : Texture
     {
-        var materials = FindRenderersByTextureName(name, textureKey).Select(x => x.sharedMaterial).ToArray();
-        return materials;
-    }
-
-    public Texture[] FindTexturesByName(string name, string key = Paths.MAIN_ATLAS_KEY)
-    {
-        return [.. FindMaterialByTextureName(name, key).Select(x => x.GetTexture(key))];
+        return [.. FindMaterialsByTextureName<T>(name, key).Select(x => x.GetTexture(key) as T)];
     }
 
     // todo: combine with below method

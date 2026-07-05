@@ -39,10 +39,10 @@ public class ExtractTemplate : MonoBehaviour
             foreach (var atlasMap in remaps)
             {
                 // todo: only search once
-                if (cache.FindTexturesByName(atlasMap.Key).FirstOrDefault() is not Texture2DArray atlas)
+                if (cache.FindTexturesByName<Texture2DArray>(atlasMap.Key).FirstOrDefault() is not Texture2DArray atlas)
                 {
                     var originalName = atlasMap.Value.First().Key;
-                    var original = cache.FindTexturesByName(originalName, Paths.MAIN_KEY).First() as Texture2D;
+                    var original = cache.FindTexturesByName<Texture2D>(originalName, Paths.MAIN_KEY).First();
                     string filename = Path.Combine(outputDirectory, $"{atlasMap.Key}.png");
                     DumpTexture(original, TextureFormat.ARGB32, 0, filename);
                     continue;

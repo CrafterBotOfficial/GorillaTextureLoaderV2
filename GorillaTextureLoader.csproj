@@ -60,6 +60,9 @@
         <Reference Include="UnityEngine.AnimationModule">
             <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
         </Reference>
+        <Reference Include="Unity.Collections.dll">
+            <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data/Managed/Unity.Collections.dll</HintPath>
+        </Reference>
         <Reference Include="UnityEngine.IMGUIModule">
             <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
         </Reference>
