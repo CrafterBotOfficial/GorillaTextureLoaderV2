@@ -42,19 +42,11 @@ public class TextureCache(bool EnableGameCaching)
         return [.. FindMaterialsByTextureName<T>(name, key).Select(x => x.GetTexture(key) as T)];
     }
 
-    // todo: combine with below method
-    public void CacheGameTextures(string textureName, Texture2D texture)
+    public void CacheGameTextures(string textureName, Texture texture)
     {
         if (!EnableGameCaching || cachedGameTextures.ContainsKey(textureName) || texture is null)
             return;
         cachedGameTextures.Add(textureName, texture);
-    }
-
-    public void CacheGameTextures(string textureName, Texture2DArray atlas)
-    {
-        if (!EnableGameCaching || cachedGameTextures.ContainsKey(textureName) || atlas is null)
-            return;
-        cachedGameTextures.Add(textureName, atlas);
     }
 
     public Dictionary<string, Texture> GetOriginalGameTextures()

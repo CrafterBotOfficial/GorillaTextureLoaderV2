@@ -89,7 +89,12 @@ public class LoaderV2 : ILoader
             foreach (var entry in archive.Entries.Where(entry => entry.FullName.EndsWith(".dds")))
             {
                 string sanitizedName = entry.Name.RemoveStart("slice_").RemoveEnd(".dds");
-                string atlasName = RemapManager.Instance.GetAtlasFromTextureName(sanitizedName);
+                var (found, atlasName) = RemapManager.Instance.GetAtlasFromTextureName(sanitizedName);
+                if (!found)
+                {
+                    Main.Log("Skipping " + entry.FullName, BepInEx.Logging.LogLevel.Warning);
+                    continue;
+                }
 
                 using var entryStream = entry.Open();
                 using var memoryStream = new MemoryStream();

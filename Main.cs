@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace GorillaTextureLoader;
 
-[BepInPlugin("crafterbot.dumbmonkegame.textureloader", "TextureLoader", "2.0.3")]
+[BepInPlugin("crafterbot.dumbmonkegame.textureloader", "TextureLoader", "2.0.4")]
 [BepInDependency("crafterbot.gorillatag.computer", "1.1.0")]
 public class Main : BaseUnityPlugin
 {
@@ -19,6 +19,7 @@ public class Main : BaseUnityPlugin
             new GameObject("TextureLoader", typeof(TextureController));
             RemapManager.Instance.Initialize();
         });
+        new UpdateChecker().DoCheck();
     }
 
 #if DEBUG

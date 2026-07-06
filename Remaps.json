@@ -15,6 +15,10 @@
             "slide": 984,
             "boardbackground": 1099,
             "treebark": 994
+        },
+
+        "TexArrayAtlas_512x512_BC7_AllScenes": {
+            "forest_to_cave_tunnel": 83
         }
     },
 
