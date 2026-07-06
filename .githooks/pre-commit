@@ -3,5 +3,5 @@
 echo "Running format"
 
 FILES=$(git diff --name-only --cached --diff-filter=A)
-dotnet format
+echo "$FILES" | xargs dotnet format --include
 echo "$FILES" | xargs git add

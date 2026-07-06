@@ -80,7 +80,7 @@ public class RemapManager
         return remaps;
     }
 
-    public string GetAtlasFromTextureName(string input)
+    public (bool found, string atlasName) GetAtlasFromTextureName(string input)
     {
         _ = GetRemaps();
         foreach (var map in json.Remaps)
@@ -89,16 +89,17 @@ public class RemapManager
             {
                 if (pair.Key == input)
                 {
-                    return map.Key;
+                    return (true, map.Key);
                 }
             }
         }
 
-        if (!json.Singles.ContainsKey(input))
+        if (json.Singles.ContainsKey(input))
         {
-            Main.Log("Malformed pack " + input, LogLevel.Warning);
+            return (true, string.Empty);
         }
-        return "TexArrayAtlas_256x256_BC7_AllScenes"; // most likely case
+        Main.Log("Malformed pack " + input, LogLevel.Warning);
+        return (false, string.Empty);
     }
 
     public bool IsSingle(string input)

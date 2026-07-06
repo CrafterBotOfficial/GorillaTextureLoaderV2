@@ -7,7 +7,6 @@ Mod is slightly unfinished and unpolished, same with Jerald.
 To create your own texturepack please refer to the [Discord](https://discord.gg/rxSEV6PqJu) server.
 
 Todo:
-- Complete autoloading texturepacks and add menu option for it
 - General code cleanup and consolidation
 - Add more maintainers and more maps
 

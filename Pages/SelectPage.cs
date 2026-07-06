@@ -5,18 +5,18 @@ using Jerald;
 
 [assembly: AutoRegister]
 
-namespace GorillaTextureLoader;
+namespace GorillaTextureLoader.Pages;
 
 [AutoRegister]
-public class MainPage : ListPage<TexturePackMeta>
+public class SelectPage : ListPage<TexturePackMeta>
 {
-    public static MainPage Instance;
+    public static SelectPage Instance;
 
     public override string PageName => "Textureloader";
 
     private Task loadTextureTask;
 
-    public MainPage()
+    public SelectPage()
     {
         Instance = this;
         ItemsPerPage = 8;
@@ -42,13 +42,17 @@ public class MainPage : ListPage<TexturePackMeta>
         var builder = new StringBuilder("<size=110%>GorillaTextureLoader");
         builder.AppendLine("<size=60%> By Crafterbot</size><color=#e3e3e3>");
 
+
         builder.Append("<size=80%>Currently Selected: [");
         builder.Append(TextureController.Instance.Current is null ? "-" : TextureController.Instance.Current.Name);
         builder.AppendLine("]</size>");
 
         builder.Append(GetListText());
         builder.AppendLine("</color>\n");
-        builder.AppendLine(GetPageCountText());
+        builder.Append(GetPageCountText());
+        if (UpdateChecker.UpdateAvailable)
+            builder.Append(" - <color=yellow><b>A new update is available!</b></color>");
+
         return builder.ToString();
     }
 
