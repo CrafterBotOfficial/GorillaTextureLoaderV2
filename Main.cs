@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using BepInEx;
 using BepInEx.Logging;
 using UnityEngine;
@@ -20,9 +21,19 @@ public class Main : BaseUnityPlugin
             RemapManager.Instance.Initialize();
         });
         new UpdateChecker().DoCheck();
+
+#if DEBUG
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += async (scene, _) =>
+        {
+            await Task.Delay(5000);
+            if (scene.name == "GorillaTag")
+                GorillaTagger.OnPlayerSpawned(DumpTextures.DoDump);
+        };
+#endif
     }
 
 #if DEBUG
+
     private void OnGUI()
     {
         if (TextureController.Instance?.PackMetas is null || !TextureController.Instance.PackMetas.IsCompleted) return;

@@ -1,5 +1,5 @@
 {
-    "GameVersion": "1.1.140",
+    "GameVersion": "1.1.141",
     "Remaps": {
         "TexArrayAtlas_2048x2048_BC7_AllScenes": {
             "forestatlas": 6,
@@ -8,17 +8,17 @@
         },
 
         "TexArrayAtlas_256x256_BC7_AllScenes": {
-            "ground": 998,
-            "leaf_fall": 993,
-            "leaf_spring": 992,
-            "stairs": 997,
-            "slide": 984,
+            "ground": 1012,
+            "leaf_fall": 1007,
+            "leaf_spring": 1006,
+            "stairs": 1011,
+            "slide": 998,
             "boardbackground": 1099,
-            "treebark": 994
+            "treebark": 1008 
         },
 
         "TexArrayAtlas_512x512_BC7_AllScenes": {
-            "forest_to_cave_tunnel": 83
+            "forest_to_cave_tunnel": 87
         }
     },
 
