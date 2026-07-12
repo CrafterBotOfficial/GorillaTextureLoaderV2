@@ -36,7 +36,7 @@ do
     magick "$file" -flip "$input" # // https://discord.com/channels/810644499763691540/810644499763691543/1519790396593537156
     filename="$(basename "${file%.*}").dds"
     rm "$filename"
-    compressonatorcli -EncodeWith HPC -nomipmap -fd BC7 "$input" "$filename" # no mipmaps since different arrays have different counts (plus future proofing)
+    compressonatorcli -EncodeWith HPC -miplevels 20 -fd BC7 "$input" "$filename"
     rm "$input"
     # nvcompress -bc7 "$file" "$filename"
 done

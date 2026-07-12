@@ -16,6 +16,12 @@ public class ExtractTemplate : MonoBehaviour
 
     private void TryExtract()
     {
+        if (RemapManager.Instance.GetJson().GameVersion != NetworkSystemConfig.BundleVersion)
+        {
+            Main.Log("Cannot generate templates as remaps isnt yet updated.");
+            return;
+        }
+
         string outputDirectory = GetDirectory();
 
         if (Directory.Exists(outputDirectory))
