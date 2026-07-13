@@ -3,21 +3,44 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace GorillaTextureLoader;
+namespace GorillaTextureLoader.Applier;
 
-public class TextureApplier(TextureCache cache)
+public class ResizedApplier(TextureCache cache) : IApplier
 {
-    public List<Texture> TexturepackAtlases = [];
-    private readonly List<Material> processedMaterials = [];
+    private List<Texture> texturepackAtlases = [];
+    private readonly List<string> keys = [];
+    private readonly List<string> singleKeys = [];
 
-    public void Start(Loader.LoadedPack combined)
+    public void Start(LoadedPack combined)
     {
         foreach (var pair in combined.Remaps)
         {
+            keys.Add(pair.Key);
             ApplyTo(pair.Key, pair.Value);
         }
 
         ApplySingles(combined.Singles);
+    }
+
+    public void Cleanup()
+    {
+        var originals = cache.GetOriginalGameTextures();
+        foreach (string name in keys)
+            foreach (var material in cache.FindMaterialsByTextureName<Texture2DArray>(name))
+            {
+                material.SetTexture(Paths.MAIN_ATLAS_KEY, originals[name]);
+            }
+
+        foreach (string name in singleKeys)
+            foreach (var material in cache.FindMaterialsByTextureName<Texture2D>(name))
+            {
+                material.SetTexture(Paths.MAIN_KEY, originals[name]);
+            }
+
+        foreach (var atlas in texturepackAtlases)
+        {
+            GameObject.Destroy(atlas);
+        }
     }
 
     private void ApplySingles(Dictionary<string, Texture2D> singles)
@@ -25,6 +48,7 @@ public class TextureApplier(TextureCache cache)
         foreach (var pair in singles)
         {
             string textureName = RemapManager.Instance.GetJson().Singles[pair.Key];
+            singleKeys.Add(textureName);
             var materials = cache.FindMaterialsByTextureName<Texture2D>(textureName, Paths.MAIN_KEY);
             if (materials.Length == 0)
             {
@@ -43,11 +67,8 @@ public class TextureApplier(TextureCache cache)
 
     private void ApplyTo(string textureName, Dictionary<int, Texture2D> combined)
     {
-        var materials = cache.FindMaterialsByTextureName<Texture2DArray>(textureName)
-            .Where(mat => !processedMaterials.Contains(mat))
-            .ToArray();
+        var materials = cache.FindMaterialsByTextureName<Texture2DArray>(textureName).ToArray();
         if (materials.Length == 0) return;
-        processedMaterials.AddRange(materials);
 
         var atlas = materials.First().GetTexture(Paths.MAIN_ATLAS_KEY) as Texture2DArray;
         cache.CacheGameTextures(textureName, atlas);
@@ -58,7 +79,7 @@ public class TextureApplier(TextureCache cache)
         if (doResize) Main.Log($"Using resolution {maxWidth},{maxHeight}", BepInEx.Logging.LogLevel.Warning);
 
         var newAtlas = new Texture2DArray(maxWidth, maxHeight, atlas.depth, TextureFormat.BC7, false, false);
-        TexturepackAtlases.Add(newAtlas);
+        texturepackAtlases.Add(newAtlas);
 
         try
         {
@@ -68,6 +89,7 @@ public class TextureApplier(TextureCache cache)
                     Graphics.CopyTexture(pair.Value, 0, 0, newAtlas, pair.Key, 0);
                 }
             else
+                // for legacy no mip map support, will be removed eventually
                 for (int i = 0; i < atlas.depth; i++)
                 {
                     if (combined.TryGetValue(i, out var customTexture)) Graphics.CopyTexture(customTexture, 0, 0, newAtlas, i, 0);
@@ -80,15 +102,6 @@ public class TextureApplier(TextureCache cache)
         catch (Exception ex)
         {
             Main.Log($"Failed to apply texture {textureName} {ex}", BepInEx.Logging.LogLevel.Error);
-        }
-    }
-
-    // last resort
-    ~TextureApplier()
-    {
-        foreach (var atlas in TexturepackAtlases)
-        {
-            GameObject.Destroy(atlas);
         }
     }
 }
