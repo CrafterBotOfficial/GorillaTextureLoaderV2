@@ -121,12 +121,14 @@ public class LoaderV2 : ILoader
             }
 
             await Awaitable.MainThreadAsync();
+            bool hasMipMaps = false;
             foreach (var dds in temp)
             {
+                if (!hasMipMaps && dds.Header.dwMipMapCount > 1) hasMipMaps = true;
                 try
                 {
                     // Main.Log($"LoaderV2 {dds.Header.dwWidth}  {dds.Header.dwHeight}");
-                    var texture = new Texture2D(dds.Header.dwWidth, dds.Header.dwHeight, TextureFormat.BC7, true, false); // height should always euqla width
+                    var texture = new Texture2D(dds.Header.dwWidth, dds.Header.dwHeight, TextureFormat.BC7, dds.Header.dwMipMapCount > 1, false); // height should always euqla width
                     texture.LoadRawTextureData(dds.Pixels);
                     texture.filterMode = FilterMode.Point;
                     texture.Apply(false, true);
@@ -150,7 +152,7 @@ public class LoaderV2 : ILoader
                 }
             }
 
-            return new LoadedPack(remaps, singles);
+            return new LoadedPack(hasMipMaps, remaps, singles);
         }
         finally
         {
@@ -167,7 +169,6 @@ public class LoaderV2 : ILoader
     }
 }
 
-public record class LoadedPack(Dictionary<string, Dictionary<int, Texture2D>> Remaps, Dictionary<string, Texture2D> Singles);
 record struct TempDDsArrayItem(DDS_HEADER Header, string SanitizedName, string AtlasName, byte[] Pixels);
 
 // copied from https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header

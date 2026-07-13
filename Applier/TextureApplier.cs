@@ -10,7 +10,7 @@ public class TextureApplier(TextureCache cache) : IApplier
     private readonly Dictionary<string, Dictionary<int, Texture2D>> atlasCopies = [];
     private readonly Dictionary<string, (Texture2D original, Texture2D custom, Material[] materials)> originalSingleTextures = [];
 
-    public void Start(Loader.LoadedPack combined)
+    public void Start(LoadedPack combined)
     {
         foreach (var pair in combined.Remaps)
         {

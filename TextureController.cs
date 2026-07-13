@@ -81,8 +81,12 @@ public class TextureController : MonoBehaviour
         var watch = Stopwatch.StartNew();
 #endif
 
-        applier = new TextureApplier(textureCache);
-        applier.Start(await meta.LoadTask.Value);
+        var pack = await meta.LoadTask.Value;
+
+        applier = pack.IsResized() || !pack.HasMipMaps
+            ? new ResizedApplier(textureCache)
+            : new TextureApplier(textureCache);
+        applier.Start(pack);
 
 #if DEBUG
         watch.Stop();
