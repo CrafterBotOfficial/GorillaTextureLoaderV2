@@ -3,8 +3,7 @@
     "Remaps": {
         "TexArrayAtlas_2048x2048_BC7_AllScenes": {
             "forestatlas": 6,
-            "stump": 3,
-            "city": 11
+            "stump": 3
         },
 
         "TexArrayAtlas_256x256_BC7_AllScenes": {
