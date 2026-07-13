@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using GorillaNetworking;
+using GorillaTextureLoader.Applier;
 using GorillaTextureLoader.Loader;
 using UnityEngine;
 
@@ -25,7 +26,7 @@ public class TextureController : MonoBehaviour
             Configuration.CurrentTexturePack.Value = value?.Id ?? string.Empty;
         }
     }
-    private TextureApplier applier;
+    private IApplier applier;
 
     private readonly ILoader loaderV2 = new LoaderV2();
     private TexturePackMeta[] metadatas;
@@ -98,25 +99,10 @@ public class TextureController : MonoBehaviour
             return;
         Main.Log("Reset");
         Current = null;
-        foreach (var texturePair in textureCache.GetOriginalGameTextures())
-        {
-            bool isAtlas = texturePair.Value is Texture2DArray;
-            string key = isAtlas ? Paths.MAIN_ATLAS_KEY : Paths.MAIN_KEY;
-            Main.Log($"Trying to revert {texturePair.Value} {isAtlas} {key}", BepInEx.Logging.LogLevel.Debug);
-            var materials = isAtlas
-                ? textureCache.FindMaterialsByTextureName<Texture2DArray>(texturePair.Key, key)
-                : textureCache.FindMaterialsByTextureName<Texture2D>(texturePair.Key, key);
-            foreach (var material in materials)
-            {
-                material.SetTexture(key, texturePair.Value);
-            }
-        }
 
-        foreach (var atlas in applier.TexturepackAtlases)
-        {
-            GameObject.Destroy(atlas);
-        }
-        applier.TexturepackAtlases.Clear();
+        if (applier is null)
+            return;
+        applier.Cleanup();
         applier = null;
     }
 

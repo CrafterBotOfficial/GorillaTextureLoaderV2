@@ -126,7 +126,7 @@ public class LoaderV2 : ILoader
                 try
                 {
                     // Main.Log($"LoaderV2 {dds.Header.dwWidth}  {dds.Header.dwHeight}");
-                    var texture = new Texture2D(dds.Header.dwWidth, dds.Header.dwHeight, TextureFormat.BC7, false, false); // height should always euqla width
+                    var texture = new Texture2D(dds.Header.dwWidth, dds.Header.dwHeight, TextureFormat.BC7, true, false); // height should always euqla width
                     texture.LoadRawTextureData(dds.Pixels);
                     texture.filterMode = FilterMode.Point;
                     texture.Apply(false, true);
