@@ -12,12 +12,12 @@ public class TextureApplier(TextureCache cache) : IApplier
 
     public void Start(LoadedPack combined)
     {
+        ApplySingles(combined.Singles);
+
         foreach (var pair in combined.Remaps)
         {
             ApplyAtlas(pair.Key, pair.Value);
         }
-
-        ApplySingles(combined.Singles);
     }
 
     public void Cleanup()

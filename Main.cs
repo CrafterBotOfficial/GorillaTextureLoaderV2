@@ -17,10 +17,9 @@ public class Main : BaseUnityPlugin
         Configuration.Initialize(Config);
         GorillaTagger.OnPlayerSpawned(() =>
         {
-            new GameObject("TextureLoader", typeof(TextureController));
+            new GameObject("TextureLoader", typeof(TextureController), typeof(UpdateChecker));
             RemapManager.Instance.Initialize();
         });
-        new UpdateChecker().DoCheck();
 
 #if DEBUG
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += async (scene, _) =>

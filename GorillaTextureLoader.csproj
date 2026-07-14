@@ -24,6 +24,12 @@
         <PackageReference Publicize="true" Include="gorillatag" Version="*"/>
     </ItemGroup>
 
+    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+        <Reference Include="MonkeStatistics">
+            <HintPath>$(GORILLATAG_PATH)\BepInEx\plugins/MonkeStatistics/MonkeStatistics.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
     <ItemGroup Condition="'$(CI)'!='TRUE'">
         <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" />
 

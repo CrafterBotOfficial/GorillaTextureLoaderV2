@@ -1,13 +1,22 @@
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace GorillaTextureLoader;
 
-public class UpdateChecker
+public class UpdateChecker : MonoBehaviour
 {
     public volatile static bool UpdateAvailable;
 
-    public async void DoCheck()
+    private Task checkTask;
+
+    private void Awake()
+    {
+        checkTask = CheckForUpdates();
+    }
+
+    private async Task CheckForUpdates()
     {
         try
         {
@@ -28,6 +37,10 @@ public class UpdateChecker
         catch (Exception ex)
         {
             Main.Log($"Update check failed {ex}", BepInEx.Logging.LogLevel.Error);
+        }
+        finally
+        {
+            Destroy(this);
         }
     }
 }
