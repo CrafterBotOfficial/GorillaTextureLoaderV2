@@ -12,8 +12,7 @@
             "leaf_spring": 1006,
             "stairs": 1011,
             "slide": 998,
-            "boardbackground": 1099,
-            "treebark": 1008 
+            "treebark": 1008
         },
 
         "TexArrayAtlas_512x512_BC7_AllScenes": {

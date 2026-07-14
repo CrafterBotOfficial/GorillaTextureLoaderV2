@@ -97,6 +97,9 @@ public class SelectPage : ListPage<TexturePackMeta>
                         errorMessage.AppendLine("<size=80%>Check LogOutput.txt for more details.</size>");
 
                         SetText(errorMessage.ToString());
+
+                        TextureController.Instance.UnloadPack();
+                        TextureController.Instance.ClearCache();
                         return;
                     }
 

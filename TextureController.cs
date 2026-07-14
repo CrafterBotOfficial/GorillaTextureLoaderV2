@@ -76,6 +76,7 @@ public class TextureController : MonoBehaviour
                 throw new Exception("Pack not allowed in this room.");
             }
         }
+        Current = meta;
 
 #if DEBUG
         var watch = Stopwatch.StartNew();
@@ -93,7 +94,6 @@ public class TextureController : MonoBehaviour
         Main.Log($"Finished in {watch.Elapsed.Seconds} {watch.Elapsed.Milliseconds}ms");
 #endif
 
-        Current = meta;
         return;
     }
 
@@ -140,6 +140,12 @@ public class TextureController : MonoBehaviour
     // and supports both Utilla and GroillaLibaray
     private bool InModdedRoom() =>
         !NetworkSystem.Instance.InRoom || NetworkSystem.Instance.GameModeString.StartsWith("MODDED_");
+
+    public void ClearCache()
+    {
+        UnloadPack();
+        textureCache = new TextureCache(true);
+    }
 
     public static TextureCache GetTextureCache()
     {

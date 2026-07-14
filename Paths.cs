@@ -4,7 +4,7 @@ namespace GorillaTextureLoader;
 
 public static class Paths
 {
-    public const string BASE_URL = "https://git.crafterbot.com/Crafterbot/GorillaTextureLoader/raw/branch/v2/"; // todo: add fall back url
+    public const string BASE_URL = "https://raw.githubusercontent.com/CrafterBotOfficial/GorillaTextureLoaderV2/refs/heads/v2";
 
     public const string MAIN_KEY = "_BaseMap";
     public const string MAIN_ATLAS_KEY = "_BaseMap_Atlas";
