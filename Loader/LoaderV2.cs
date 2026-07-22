@@ -5,7 +5,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -48,7 +47,7 @@ public class LoaderV2 : ILoader
         try
         {
             var fileStream = File.OpenRead(file);
-            string hash = GetHash(fileStream);
+            string hash = Utilities.GetHash(fileStream);
             var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
             var entry = zipArchive.GetEntry("package.json") ?? throw new Exception("No metadata found!");
 
@@ -159,13 +158,6 @@ public class LoaderV2 : ILoader
             fileStream.Close();
             archive.Dispose();
         }
-    }
-
-    private string GetHash(FileStream stream)
-    {
-        using var hashAlgorithm = SHA256.Create();
-        var hashBytes = hashAlgorithm.ComputeHash(stream);
-        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
     }
 }
 

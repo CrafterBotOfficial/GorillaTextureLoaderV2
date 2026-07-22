@@ -1,31 +1,8 @@
 #if DEBUG
 
-using GorillaNetworking;
-using Jerald;
 using MonkeStatistics.UI;
 
 namespace GorillaTextureLoader.Pages;
-
-[Jerald.AutoRegister]
-public class DebugPage : Page
-{
-    public override string PageName => "GTL Debug";
-
-    public override string GetContent()
-    {
-        return "A: Clear cache\n";
-    }
-
-    public override void OnKeyPress(GorillaKeyboardBindings key)
-    {
-        switch (key)
-        {
-            case GorillaKeyboardBindings.A:
-                TextureController.Instance.ClearCache();
-                break;
-        }
-    }
-}
 
 [MonkeStatistics.AutoRegister]
 public class DebugWatchPage : IPage

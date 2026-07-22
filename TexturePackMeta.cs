@@ -14,6 +14,8 @@ public record class TexturePackMeta(
     Lazy<Task<LoadedPack>> LoadTask
 )
 {
+    public string? OnlineHash { get; set; }
+
     [JsonIgnore] public string Id = $"{Name}.{Author}";
     [JsonIgnore] public bool IsVerified;
     [JsonIgnore] public string ZipFilePath;
