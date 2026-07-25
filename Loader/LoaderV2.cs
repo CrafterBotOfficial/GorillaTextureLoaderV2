@@ -24,7 +24,7 @@ public class LoaderV2 : ILoader
         try
         {
             using var httpClient = new HttpClient();
-            WhitelistedPack = await httpClient.GetStringAsync(Paths.BASE_URL + "/verified.csv");
+            WhitelistedPack = await httpClient.GetStringAsync(Paths.BASE_URL + "verified.csv");
         }
         catch (Exception ex)
         {
