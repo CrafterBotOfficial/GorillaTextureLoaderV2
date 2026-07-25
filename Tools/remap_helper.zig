@@ -23,7 +23,6 @@ pub fn main(init: std.process.Init) !void {
     };
     defer known_texture_hashes.deinit();
 
-
     var futures = std.ArrayList(std.Io.Future(anyerror!FileHashResult)).empty;
     defer {
         for (futures.items) |*item| {
@@ -42,10 +41,13 @@ pub fn main(init: std.process.Init) !void {
         try futures.append(init.gpa, future);
     }
 
+    var found_hash_indexes = std.ArrayList(usize).empty;
+    defer found_hash_indexes.deinit(init.gpa);
+
     const width = 25;
     for (futures.items) |*future| {
         const item = try future.await(init.io);
-        for (known_texture_hashes.value) |prev| {
+        for (known_texture_hashes.value, 0..) |prev, i| {
             if (std.mem.eql(u8, prev.hash, item.hash)) {
                 const space = try init.gpa.alloc(u8, width - prev.texture_name.len);
                 defer init.gpa.free(space);
@@ -55,9 +57,20 @@ pub fn main(init: std.process.Init) !void {
 
                 const file_name = std.fs.path.stem(item.file_name);
                 std.log.info("{s} {s} {s}", .{ prev.texture_name, space, file_name});
+
+                try found_hash_indexes.append(init.gpa, i);
                 break;
             }
         }
+    }
+
+    // log not found
+    for (known_texture_hashes.value, 0..) |item, index| {
+        if (std.mem.indexOfScalar(usize, found_hash_indexes.items, index)) |_|
+        {
+            continue;
+        }
+        std.log.err("{s} Not found", .{ item.texture_name });
     }
 
     std.log.info("All tasks complete!", .{});
