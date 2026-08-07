@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace GorillaTextureLoader;
 
-[BepInPlugin("crafterbot.dumbmonkegame.textureloader", "TextureLoader", "2.1.1")]
+[BepInPlugin("crafterbot.dumbmonkegame.textureloader", "TextureLoader", "2.1.2")]
 [BepInDependency("crafterbot.gorillatag.computer", "1.1.0")]
 public class Main : BaseUnityPlugin
 {
