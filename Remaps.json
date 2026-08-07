@@ -1,5 +1,5 @@
 {
-    "GameVersion": "1.1.142",
+    "GameVersion": "1.1.143",
     "Remaps": {
         "TexArrayAtlas_2048x2048_BC7_AllScenes": {
             "forestatlas": 6,
@@ -7,12 +7,12 @@
         },
 
         "TexArrayAtlas_256x256_BC7_AllScenes": {
-            "ground": 1022,
-            "leaf_fall": 1017,
-            "leaf_spring": 1016,
-            "stairs": 1021,
-            "slide": 1008,
-            "treebark": 1018
+            "ground": 1039,
+            "leaf_fall": 1034,
+            "leaf_spring": 1033,
+            "stairs": 1038,
+            "slide": 1025,
+            "treebark": 1035 
         },
 
         "TexArrayAtlas_512x512_BC7_AllScenes": {
