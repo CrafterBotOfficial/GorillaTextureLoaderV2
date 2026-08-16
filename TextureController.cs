@@ -56,7 +56,6 @@ public class TextureController : MonoBehaviour
         PackMetas.ContinueWith(t =>
         {
             Main.Log($"Loaded {t.Result.Length} pack metas", BepInEx.Logging.LogLevel.Message);
-            Pages.SelectPage.Instance.Items = [.. t.Result];
         }, TaskContinuationOptions.OnlyOnRanToCompletion);
 
         textureCache = new TextureCache(true);

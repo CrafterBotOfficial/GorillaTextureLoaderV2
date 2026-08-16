@@ -16,7 +16,9 @@ public class ExtractTemplate : MonoBehaviour
 
     private void TryExtract()
     {
-        if (RemapManager.Instance.GetJson().GameVersion != NetworkSystemConfig.BundleVersion)
+        string latestSupportedVersion = RemapManager.Instance.GetLatestVersion();
+        Main.Log($"Comparing {latestSupportedVersion} {NetworkSystemConfig.BundleVersion}");
+        if (latestSupportedVersion != NetworkSystemConfig.BundleVersion)
         {
             Main.Log("Cannot generate templates as remaps isnt yet updated.");
             return;

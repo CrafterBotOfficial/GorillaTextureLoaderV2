@@ -39,8 +39,8 @@
         <Reference Include="Assembly-CSharp" Publicize="true">
             <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\Assembly-CSharp.dll</HintPath>
         </Reference>
-        <Reference Include="Jerald">
-            <HintPath>$(GORILLATAG_PATH)\BepInEx\plugins\Jerald\Jerald.dll</HintPath>
+        <Reference Include="ComputerInterface">
+            <HintPath>$(GORILLATAG_PATH)\BepInEx\plugins\ComputerInterface\ComputerInterface.dll</HintPath>
         </Reference>
         <Reference Include="BepInEx">
             <HintPath>$(GORILLATAG_PATH)\BepInEx\core\BepInEx.dll</HintPath>
