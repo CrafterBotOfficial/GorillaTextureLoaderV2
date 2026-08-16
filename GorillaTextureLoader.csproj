@@ -21,7 +21,7 @@
 
     <ItemGroup Condition="'$(CI)'=='TRUE'">
         <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" />
-        <PackageReference Publicize="true" Include="gorillatag" Version="*"/>
+        <PackageReference Include="gorillatag" Version="*"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Debug'">
