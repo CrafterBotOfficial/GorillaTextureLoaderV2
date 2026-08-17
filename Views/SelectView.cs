@@ -6,14 +6,14 @@ using ComputerInterface.Extensions;
 using ComputerInterface.Interfaces;
 using ComputerInterface.Models;
 
-namespace GorillaTextureLoader.Pages;
+namespace GorillaTextureLoader.Views;
 
 public class SelectView : ComputerView
 {
     public static SelectView Instance;
 
-    public UIElementPageHandler<TexturePackMeta> pageHandler;
-    public UISelectionHandler selectionHandler;
+    private UIElementPageHandler<TexturePackMeta> pageHandler;
+    private UISelectionHandler selectionHandler;
 
     private Task loadTextureTask;
 
@@ -29,28 +29,35 @@ public class SelectView : ComputerView
         selectionHandler.ConfigureSelectionIndicator("<color=#ed6540>> </color>", "", "  ", "");
         selectionHandler.OnSelected += (index) =>
         {
+            if (loadTextureTask is not null && !loadTextureTask.IsCompleted)
+            {
+                Main.Log("Texture is currently loading. \nPlease wait for the current task to complete.", BepInEx.Logging.LogLevel.Warning);
+                return;
+            }
+
             var selected = TextureController.Instance.PackMetas.Result[index];
+            if (selected == TextureController.Instance.Current)
+            {
+                Main.Log("TextureController current is selected", BepInEx.Logging.LogLevel.Warning);
+                ShowView<InfoView>("You cannot load the same texturepack twice.", "Press any key to continue.", "red");
+                return;
+            }
+
             loadTextureTask = TextureController.Instance.LoadPack(selected)
                 .ContinueWith(task =>
                 {
                     if (task.IsFaulted || task.Exception is not null)
                     {
                         Main.Log($"Load pack task fail. {task.Exception ?? default}", BepInEx.Logging.LogLevel.Error);
-                        var errorMessage = new StringBuilder("<color=red>Failed to load texturepack.</color>\n");
-                        errorMessage.AppendLine(new string('=', 20));
 
-                        errorMessage.AppendLine(task.Exception is null ? "No exception detected :/" : $"Error: <size=80%><color=red>{task.Exception.Message}</color></size>");
-                        errorMessage.AppendLine(string.Empty);
-                        errorMessage.AppendLine("<size=80%>Check LogOutput.txt for more details.</size>");
-
-                        ShowView<InfoView>(errorMessage.ToString());
+                        ShowView<InfoView>("Failed to load texturepack.", $"A unhandled exception occured!\nError: {task.Exception?.Message}", "red");
 
                         TextureController.Instance.UnloadPack();
                         TextureController.Instance.ClearCache();
                         return;
                     }
 
-                    ShowView<InfoView>($"<align=center><size=110%><color=green>Loaded custom texturepack!</color></size></align>\n<size=90%>Press any key to continue</size>");
+                    ShowView<InfoView>($"Loaded custom texturepack!", "Press any key to continue");
                 }, TaskContinuationOptions.ExecuteSynchronously);
         };
 
@@ -88,8 +95,10 @@ public class SelectView : ComputerView
 
         var builder = new StringBuilder();
         builder.BeginCenter();
+        // builder.MakeBar('=', ScreenWidth, 0);
         builder.Append("<size=110%>GorillaTextureLoader");
         builder.AppendLine("<size=60%> By Crafterbot</size><color=#e3e3e3>");
+        // builder.MakeBar('=', ScreenWidth, 0);
         builder.EndAlign();
 
         builder.Append("<size=80%>Currently Selected: [");
@@ -103,7 +112,7 @@ public class SelectView : ComputerView
             string text = selectionHandler.GetIndicatedText(index, $"<color={color}>{packMeta.Name}</color>");
             builder.AppendLine(text);
         });
-        builder.AppendLine("</color>\n");
+        builder.AppendLine("</color>");
         pageHandler.AppendFooter(builder);
         if (UpdateChecker.UpdateAvailable)
             builder.Append(" - <color=yellow><b>A new update is available!</b></color>");
@@ -135,26 +144,6 @@ public class SelectView : ComputerView
         {
             TextureController.Instance.UnloadPack();
             return;
-        }
-
-        if (key == EKeyboardButton.Enter)
-        {
-            if (loadTextureTask is not null && !loadTextureTask.IsCompleted)
-            {
-                Main.Log("Texture is currently loading. \nPlease wait for the current task to complete.", BepInEx.Logging.LogLevel.Warning);
-                return;
-            }
-
-            var selected = TextureController.Instance.PackMetas.Result[selectionHandler.CurrentSelectionIndex];
-            if (selected == TextureController.Instance.Current)
-            {
-                Main.Log("TextureController current is selected", BepInEx.Logging.LogLevel.Warning);
-
-                ShowView<InfoView>("<color=red>You cannot load the same texturepack twice.</color>\nPress any key to continue.");
-                return;
-            }
-
-            ShowView<InfoView>("...");
         }
     }
 }
