@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GorillaTextureLoader;
 
 [BepInPlugin("crafterbot.dumbmonkegame.textureloader", "TextureLoader", "2.2.0")]
-[BepInDependency("crafterbot.gorillatag.computer", "1.1.0")]
+[BepInDependency("tonimacaroni.computerinterface", "2.0.1")]
 public class Main : BaseUnityPlugin
 {
     public static Main Instance;
@@ -15,10 +15,10 @@ public class Main : BaseUnityPlugin
     {
         Instance = this;
         Configuration.Initialize(Config);
+        _ = RemapManager.Instance;
         GorillaTagger.OnPlayerSpawned(() =>
         {
             new GameObject("TextureLoader", typeof(TextureController), typeof(UpdateChecker));
-            _ = RemapManager.Instance;
         });
 
 #if DEBUG
@@ -32,7 +32,6 @@ public class Main : BaseUnityPlugin
     }
 
 #if DEBUG
-
     private void OnGUI()
     {
         if (TextureController.Instance?.PackMetas is null || !TextureController.Instance.PackMetas.IsCompleted) return;

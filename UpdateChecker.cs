@@ -9,11 +9,9 @@ public class UpdateChecker : MonoBehaviour
 {
     public volatile static bool UpdateAvailable;
 
-    private Task checkTask;
-
     private void Awake()
     {
-        checkTask = CheckForUpdates();
+        _ = CheckForUpdates();
     }
 
     private async Task CheckForUpdates()
