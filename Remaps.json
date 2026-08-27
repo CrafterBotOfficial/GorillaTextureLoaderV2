@@ -7,12 +7,12 @@
         },
 
         "TexArrayAtlas_256x256_BC7_AllScenes": {
-            "ground": 1054,
-            "leaf_fall": 1049,
-            "leaf_spring": 1048,
-            "stairs": 1053,
-            "slide": 1039,
-            "treebark": 1050 
+            "ground": 1055,
+            "leaf_fall": 1050,
+            "leaf_spring": 1049,
+            "stairs": 1054,
+            "slide": 1040,
+            "treebark": 1051
         },
 
         "TexArrayAtlas_512x512_BC7_AllScenes": {
