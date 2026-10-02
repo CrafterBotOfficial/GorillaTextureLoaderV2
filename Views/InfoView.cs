@@ -22,7 +22,7 @@ public class InfoView : ComputerView
 
         header = viewHeader;
         text = viewText;
-        if (arguments.Length == 3 && arguments[2] is string color) 
+        if (arguments.Length == 3 && arguments[2] is string color)
             headerColor = color;
         else headerColor = "green";
     }

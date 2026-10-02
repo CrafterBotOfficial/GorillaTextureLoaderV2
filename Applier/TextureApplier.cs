@@ -46,16 +46,23 @@ public class TextureApplier(TextureCache cache) : IApplier
     {
         foreach (var pair in singles)
         {
-            string textureName = RemapManager.Instance.GetJson().Singles[pair.Key];
-            var materials = cache.FindMaterialsByTextureName<Texture2D>(textureName, Paths.MAIN_KEY);
-            var texture = cache.FindTexturesByName<Texture2D>(textureName, Paths.MAIN_KEY).First();
-
-            foreach (var material in materials)
+            try
             {
-                material.SetTexture(Paths.MAIN_KEY, pair.Value);
-            }
+                string textureName = RemapManager.Instance.GetJson().Singles[pair.Key];
+                var materials = cache.FindMaterialsByTextureName<Texture2D>(textureName, Paths.MAIN_KEY);
+                var texture = cache.FindTexturesByName<Texture2D>(textureName, Paths.MAIN_KEY).First();
 
-            originalSingleTextures.Add(pair.Key, (texture, pair.Value, materials));
+                foreach (var material in materials)
+                {
+                    material.SetTexture(Paths.MAIN_KEY, pair.Value);
+                }
+
+                originalSingleTextures.Add(pair.Key, (texture, pair.Value, materials));
+            }
+            catch (Exception ex)
+            {
+                Main.Log($"Failed to apply texture to {pair.Key} {pair.Value?.name} {ex}", BepInEx.Logging.LogLevel.Warning);
+            }
         }
     }
 

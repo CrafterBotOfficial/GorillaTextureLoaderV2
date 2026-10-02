@@ -37,6 +37,7 @@ public class ExtractTemplate : MonoBehaviour
 
         Main.Log("Extracting template files");
 
+        // very bad code from early tests, butt to lazy to rewrite
         try
         {
             Directory.CreateDirectory(outputDirectory);
@@ -46,20 +47,28 @@ public class ExtractTemplate : MonoBehaviour
             var remaps = RemapManager.Instance.GetRemapAndSinglessWithAtlas();
             foreach (var atlasMap in remaps)
             {
-                // todo: only search once
-                if (cache.FindTexturesByName<Texture2DArray>(atlasMap.Key).FirstOrDefault() is not Texture2DArray atlas)
+                try
                 {
-                    var originalName = atlasMap.Value.First().Key;
-                    var original = cache.FindTexturesByName<Texture2D>(originalName, Paths.MAIN_KEY).First();
-                    string filename = Path.Combine(outputDirectory, $"{atlasMap.Key}.png");
-                    DumpTexture(original, TextureFormat.ARGB32, 0, filename);
-                    continue;
-                }
+                    // todo: only search once
+                    if (cache.FindTexturesByName<Texture2DArray>(atlasMap.Key).FirstOrDefault() is not Texture2DArray atlas)
+                    {
+                        var originalName = atlasMap.Value.First().Key;
+                        var original = cache.FindTexturesByName<Texture2D>(originalName, Paths.MAIN_KEY).First();
+                        string filename = Path.Combine(outputDirectory, $"{atlasMap.Key}.png");
+                        DumpTexture(original, TextureFormat.ARGB32, 0, filename);
+                        continue;
+                    }
 
-                foreach (var map in atlasMap.Value)
+                    foreach (var map in atlasMap.Value)
+                    {
+                        string filename = Path.Combine(outputDirectory, $"{map.Key}.png");
+                        DumpTexture(atlas, atlas.format, map.Value, filename);
+                    }
+                }
+                catch (Exception ex)
                 {
-                    string filename = Path.Combine(outputDirectory, $"{map.Key}.png");
-                    DumpTexture(atlas, atlas.format, map.Value, filename);
+                    Main.Log($"Error extracting {atlasMap.Key} {ex}");
+                    try { File.AppendAllText(Path.Combine(outputDirectory, "errors.log"), ex.Message); } catch { }
                 }
             }
         }
