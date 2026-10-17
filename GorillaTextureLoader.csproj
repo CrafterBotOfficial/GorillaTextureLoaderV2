@@ -40,7 +40,7 @@
             <HintPath>$(GORILLATAG_PATH)\Gorilla Tag_Data\Managed\Assembly-CSharp.dll</HintPath>
         </Reference>
         <Reference Include="ComputerInterface">
-            <HintPath>$(GORILLATAG_PATH)\BepInEx\plugins\ComputerInterface\ComputerInterface.dll</HintPath>
+            <HintPath>$(GORILLATAG_PATH)\BepInEx\plugins\ComputerInterface\ComputerInterface.BepInEx.dll</HintPath>
         </Reference>
         <Reference Include="BepInEx">
             <HintPath>$(GORILLATAG_PATH)\BepInEx\core\BepInEx.dll</HintPath>
